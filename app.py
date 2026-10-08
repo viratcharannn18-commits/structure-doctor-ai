@@ -236,10 +236,43 @@ header {visibility: hidden;}
     border: 1px solid #B9D9C0;
 }
 
-.callout *, .warning *, .danger *, .good * {
+.callout *,
+.warning *,
+.danger *,
+.good * {
     color: #1F2933 !important;
 }
 
+.hero,
+.hero * {
+    color: #FFFFFF !important;
+}
+
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] * {
+    color: #FFFFFF !important;
+}
+
+.stButton > button {
+    color: #1F2933 !important;
+}
+
+.stButton > button p {
+    color: #1F2933 !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #64748B !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #1F2933 !important;
+}
+
+.stCaption,
+[data-testid="stCaptionContainer"] {
+    color: #64748B !important;
+}
 /* Pills */
 .pill {
     display: inline-block;
