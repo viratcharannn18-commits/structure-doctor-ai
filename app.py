@@ -1,802 +1,483 @@
-import os
 import io
-import json
-import base64
+import os
 import sqlite3
-import html
 from datetime import datetime
+from pathlib import Path
 
 import cv2
 import numpy as np
 import streamlit as st
-from PIL import Image
-from openai import OpenAI
-
+from PIL import Image, ImageDraw
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.units import mm
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Image as RLImage,
-    Table,
-    TableStyle,
-    PageBreak,
-)
-from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
 
-try:
-    from risk_engine import assess_risk, build_recommendation
-except ImportError:
-    from risk_engine import assess_risk
-
-    def build_recommendation(result):
-        level = str(result.get("risk_level", "Moderate"))
-        if level.lower() in {"critical", "high"}:
-            return "Restrict access where appropriate and arrange a qualified structural inspection before repair work."
-        if level.lower() == "moderate":
-            return "Arrange a professional inspection and monitor the affected area; select repair only after the cause is confirmed."
-        return "Continue observation and arrange professional inspection if the defect grows, spreads, leaks, or becomes associated with deformation."
+from risk_engine import assess_risk, build_recommendation
 
 
-APP_TITLE = "STRUCTURE DOCTOR AI"
-DB_PATH = "inspection_history.db"
+APP_TITLE = "STRUCTURE DOCTOR"
+DB_PATH = Path("structure_doctor.db")
 
+
+# -----------------------------
+# Page / theme
+# -----------------------------
 st.set_page_config(
-    page_title=APP_TITLE,
+    page_title="Structure Doctor AI",
     page_icon="🏗️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# -----------------------------
-# -----------------------------
-# EXISTING DARK-FIELD UI
-# -----------------------------
-# Keep the original light page background and dark input controls.
-# Functionality changes do not alter the visual theme.
 st.markdown(
     """
-    <style>
-    .stApp { background: #f8fafc; }
-    .main-title { font-size: 2.25rem; font-weight: 800; color: #334155; margin-bottom: 0.1rem; }
-    .subtitle { color: #52759f; font-size: 1rem; margin-bottom: 1.3rem; }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-    /* Keep form controls like the user's existing screen */
-    div[data-baseweb="select"] > div,
-    div[data-baseweb="input"],
-    div[data-baseweb="textarea"] {
-        background-color: #27272f !important;
-        border-color: #27272f !important;
-        color: #ffffff !important;
-        border-radius: 9px !important;
-    }
-    div[data-baseweb="select"] *,
-    div[data-baseweb="input"] *,
-    div[data-baseweb="textarea"] * {
-        color: #ffffff !important;
-    }
-    div[data-baseweb="input"] input,
-    div[data-baseweb="textarea"] textarea {
-        background: #27272f !important;
-        color: #ffffff !important;
-    }
-    div[data-baseweb="input"] input::placeholder,
-    div[data-baseweb="textarea"] textarea::placeholder {
-        color: #aeb3c2 !important;
-        opacity: 1 !important;
-    }
-    div[data-baseweb="select"] svg { fill: #ffffff !important; }
-    [data-testid="stNumberInput"] button {
-        background: #27272f !important;
-        color: #ffffff !important;
-        border: none !important;
-    }
-    [data-testid="stNumberInput"] button:hover { background: #30303a !important; }
-    [data-testid="stFileUploader"] section {
-        background: #27272f !important;
-        border-color: #27272f !important;
-    }
-    [data-testid="stFileUploader"] section * { color: #ffffff !important; }
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif;
+}
+h1, h2, h3, h4 {
+    font-family: 'Space Grotesk', sans-serif;
+}
+.block-container {
+    max-width: 1250px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+.hero {
+    padding: 2.3rem 2.5rem;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #101820 0%, #1d3542 60%, #2f6f8f 100%);
+    color: white;
+    margin-bottom: 1.4rem;
+}
+.hero h1 {
+    font-size: 3.3rem;
+    margin: 0;
+    letter-spacing: -2px;
+}
+.hero .tagline {
+    font-size: 1.15rem;
+    margin-top: .7rem;
+    opacity: .92;
+}
+.hero .tech {
+    margin-top: 1.2rem;
+    font-size: .82rem;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    opacity: .75;
+}
+.section {
+    border: 1px solid #d9e2e8;
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.2rem 1.35rem;
+    margin-bottom: 1rem;
+}
+.kpi {
+    border: 1px solid #d9e2e8;
+    border-radius: 16px;
+    padding: 1rem;
+    background: #f7f9fb;
+    min-height: 105px;
+}
+.kpi .label {
+    color: #65737e;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+.kpi .value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    margin-top: .35rem;
+    color: #1F2933 !important;
+}
+.badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: .35rem .8rem;
+    font-weight: 700;
+    font-size: .8rem;
+    background: #e8f1f5;
+}
+.callout {
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    background: #f7f9fb;
+    border-left: 5px solid #2f6f8f;
+    color: #1F2933 !important;
+}
 
-    /* Dropdown menu */
-    [data-baseweb="popover"] [role="option"] {
-        background: #27272f !important;
-        color: #ffffff !important;
-    }
-    [data-baseweb="popover"] [role="option"]:hover {
-        background: #353540 !important;
-    }
+.warning {
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    background: #fff6e8;
+    border-left: 5px solid #d99121;
+    color: #1F2933 !important;
+}
 
-    .card {
-        background: white; border: 1px solid #e2e8f0; border-radius: 14px;
-        padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(15,23,42,.04);
-    }
-    .section-title { color: #334155; font-size: 1.15rem; font-weight: 750; margin-bottom: 8px; }
-    .muted { color: #64748b; font-size: .9rem; }
-    .metric-card {
-        background: white; border: 1px solid #e2e8f0; border-radius: 14px;
-        padding: 16px; text-align: center; height: 100%;
-    }
-    .metric-label { color: #64748b; font-size: .82rem; }
-    .metric-value { color: #0f172a; font-size: 1.45rem; font-weight: 800; margin-top: 3px; }
-    .risk-box { border-radius: 14px; padding: 18px; background: #f8fafc; border: 1px solid #cbd5e1; }
-    .repair-box { border-radius: 14px; padding: 16px; background: #f8fafc; border: 1px solid #cbd5e1; }
-    .notice {
-        background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;
-        padding: 14px; color: #9a3412;
-    }
-    .success-note {
-        background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;
-        padding: 14px; color: #166534;
-    }
+.danger {
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    background: #fff0f0;
+    border-left: 5px solid #c53d3d;
+    color: #1F2933 !important;
+}
 
-    /* Keep all normal text visible on the light page background.
-       These rules do NOT change the dark form-control theme above. */
-    .stApp, .stApp p, .stApp span, .stApp label,
-    .stApp .stMarkdown, .stApp .stCaption,
-    .stApp [data-testid="stMarkdownContainer"] {
-        color: #334155;
-    }
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4,
-    .stApp h5, .stApp h6 {
-        color: #334155 !important;
-    }
-    .stApp [data-testid="stWidgetLabel"] p,
-    .stApp [data-testid="stWidgetLabel"] label,
-    .stApp [data-testid="stCheckbox"] label,
-    .stApp [data-testid="stRadio"] label,
-    .stApp [data-testid="stFileUploaderDropzoneInstructions"] {
-        color: #334155 !important;
-    }
-    .stApp [data-testid="stCaptionContainer"],
-    .stApp [data-testid="stCaptionContainer"] * {
-        color: #64748b !important;
-    }
-    .stApp .stAlert, .stApp .stAlert * {
-        color: inherit;
-    }
-    div.stButton > button {
-        border-radius: 9px; font-weight: 700; border: 1px solid #cbd5e1;
-    }
-    </style>
-    """,
+.good {
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    background: #edf8f1;
+    border-left: 5px solid #3f8f5f;
+    color: #1F2933 !important;
+}
+.small {
+    color: #65737e;
+    font-size: .86rem;
+}
+.step {
+    text-align: center;
+    padding: 1rem .5rem;
+}
+.step-number {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8f1f5;
+    color: #2f6f8f;
+    font-weight: 700;
+    margin-bottom: .4rem;
+}
+hr { border: none; border-top: 1px solid #e1e7eb; }
+.kpi .value,
+.callout *,
+.warning *,
+.danger *,
+.good * {
+    color: #1F2933 !important;
+}
+</style>
+""",
     unsafe_allow_html=True,
 )
 
 
-def esc(value):
-    return html.escape(str(value if value is not None else ""))
-
-
-def render_html(content):
-    st.markdown(content, unsafe_allow_html=True)
-
-
 # -----------------------------
-# DATABASE
+# Database
 # -----------------------------
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS inspections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            structure_type TEXT,
+            created_at TEXT,
             building_type TEXT,
             element TEXT,
+            age REAL,
             material TEXT,
-            location TEXT,
-            building_age TEXT,
-            environment TEXT,
             crack_type TEXT,
-            applied_load TEXT,
-            load_unit TEXT,
-            load_type TEXT,
-            load_location TEXT,
-            crack_detected INTEGER,
-            damage_type TEXT,
             severity TEXT,
-            risk_score INTEGER,
-            risk_level TEXT,
-            crack_length TEXT,
-            crack_width TEXT,
-            cause TEXT,
-            solution TEXT,
-            recommended_repair TEXT,
-            urgency TEXT,
-            ai_analysis TEXT
+            confidence REAL,
+            length_text TEXT,
+            width_text TEXT,
+            recommendation TEXT
         )
         """
     )
-    # Safe migration for older DBs.
-    existing = {row[1] for row in cur.execute("PRAGMA table_info(inspections)").fetchall()}
-    columns = {
-        "building_type": "TEXT",
-        "element": "TEXT",
-        "material": "TEXT",
-        "location": "TEXT",
-        "building_age": "TEXT",
-        "environment": "TEXT",
-        "crack_type": "TEXT",
-        "applied_load": "TEXT",
-        "load_unit": "TEXT",
-        "load_type": "TEXT",
-        "load_location": "TEXT",
-        "crack_detected": "INTEGER",
-        "damage_type": "TEXT",
-        "severity": "TEXT",
-        "risk_score": "INTEGER",
-        "risk_level": "TEXT",
-        "crack_length": "TEXT",
-        "crack_width": "TEXT",
-        "cause": "TEXT",
-        "solution": "TEXT",
-        "recommended_repair": "TEXT",
-        "urgency": "TEXT",
-        "ai_analysis": "TEXT",
-    }
-    for name, dtype in columns.items():
-        if name not in existing:
-            cur.execute(f"ALTER TABLE inspections ADD COLUMN {name} {dtype}")
-    conn.commit()
-    conn.close()
+    con.commit()
+    con.close()
+
+
+def save_inspection(result, info):
+    con = sqlite3.connect(DB_PATH)
+    con.execute(
+        """
+        INSERT INTO inspections
+        (created_at, building_type, element, age, material, crack_type,
+         severity, confidence, length_text, width_text, recommendation)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            info["building_type"],
+            info["element"],
+            info["age"],
+            info["material"],
+            result["crack_type"],
+            result["severity"],
+            result["confidence"],
+            result["length_text"],
+            result["width_text"],
+            result["recommendation"]["next_step"],
+        ),
+    )
+    con.commit()
+    con.close()
 
 
 init_db()
 
 
-def save_inspection(inputs, ai_result, risk_result, cv_result):
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute(
-        """
-        INSERT INTO inspections (
-            timestamp, structure_type, building_type, element, material, location,
-            building_age, environment, crack_type, applied_load, load_unit, load_type,
-            load_location, crack_detected, damage_type, severity, risk_score, risk_level,
-            crack_length, crack_width, cause, solution, recommended_repair, urgency, ai_analysis
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            datetime.now().isoformat(timespec="seconds"),
-            inputs.get("structure_type", ""),
-            inputs.get("building_type", ""),
-            inputs.get("element", ""),
-            inputs.get("material", ""),
-            inputs.get("location", ""),
-            inputs.get("building_age", ""),
-            inputs.get("environment", ""),
-            inputs.get("crack_type", ""),
-            inputs.get("applied_load", ""),
-            inputs.get("load_unit", ""),
-            inputs.get("load_type", ""),
-            inputs.get("load_location", ""),
-            int(bool(ai_result.get("crack_detected"))),
-            ai_result.get("damage_type", ""),
-            ai_result.get("severity", ""),
-            int(risk_result.get("risk_score", ai_result.get("risk_score", 0))),
-            risk_result.get("risk_level", ""),
-            cv_result.get("length_text", ""),
-            cv_result.get("width_text", ""),
-            ai_result.get("cause", ""),
-            ai_result.get("solution", ""),
-            ai_result.get("recommended_repair", ""),
-            ai_result.get("urgency", ""),
-            json.dumps(ai_result, ensure_ascii=False),
-        ),
-    )
-    conn.commit()
-    conn.close()
-
-
 # -----------------------------
-# OPENAI / AI VISION
+# Image analysis
 # -----------------------------
-def get_api_key():
-    try:
-        key = st.secrets.get("OPENAI_API_KEY")
-    except Exception:
-        key = None
-    if key:
-        return str(key).strip()
-    key = os.getenv("OPENAI_API_KEY")
-    return str(key).strip() if key else None
-
-
-def image_to_jpeg_bytes(image):
-    buf = io.BytesIO()
-    image.convert("RGB").save(buf, format="JPEG", quality=90)
-    return buf.getvalue()
-
-
-def extract_json_from_response(text):
-    text = (text or "").strip()
-    if text.startswith("```"):
-        text = text.replace("```json", "", 1).replace("```", "")
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        text = text[start : end + 1]
-    return json.loads(text)
-
-
-def clean_ai_result(data):
-    data = data if isinstance(data, dict) else {}
-    severity = str(data.get("severity", "Moderate")).strip().title()
-    if severity not in {"Low", "Moderate", "High", "Critical"}:
-        severity = "Moderate"
-
-    try:
-        risk_score = int(float(data.get("risk_score", 0)))
-    except Exception:
-        risk_score = 0
-    risk_score = max(0, min(100, risk_score))
-
-    causes = data.get("possible_causes", [])
-    if isinstance(causes, str):
-        causes = [causes]
-    if not isinstance(causes, list):
-        causes = []
-    causes = [str(x).strip() for x in causes if str(x).strip()]
-
-    detected = bool(data.get("crack_detected", False))
-    damage_type = str(data.get("damage_type", "No obvious crack/damage detected")).strip()
-
-    cause = str(data.get("cause", "Undetermined from image")).strip()
-    solution = str(data.get("solution", "Professional structural inspection before selecting a repair method.")).strip()
-    repair = str(data.get("recommended_repair", "Professional inspection and repair-method selection based on confirmed cause.")).strip()
-    urgency = str(data.get("urgency", "Professional inspection recommended.")).strip()
-
-    if detected:
-        if not cause:
-            cause = "Possible cause cannot be confirmed from a photograph alone."
-        if not solution:
-            solution = "Confirm the cause through a qualified site inspection before repair."
-        if not repair:
-            repair = "Select the repair method only after the defect mechanism and structural condition are verified."
-        if not urgency:
-            urgency = "Arrange professional inspection; restrict access if damage appears severe or unstable."
-
-    return {
-        "available": bool(data.get("available", True)),
-        "crack_detected": detected,
-        "damage_type": damage_type,
-        "location": str(data.get("location", "Not clearly identifiable from image")).strip(),
-        "severity": severity,
-        "risk_score": risk_score,
-        "description": str(data.get("description", "No detailed visual description was returned.")).strip(),
-        "visual_evidence": str(data.get("visual_evidence", "")).strip(),
-        "possible_causes": causes,
-        "cause": cause,
-        "solution": solution,
-        "recommended_repair": repair,
-        "urgency": urgency,
-        "recommendation": str(data.get("recommendation", "")).strip(),
-    }
-
-
-def ai_fallback(reason="AI analysis unavailable"):
-    return clean_ai_result(
-        {
-            "available": False,
-            "crack_detected": False,
-            "damage_type": "AI analysis unavailable",
-            "location": "Not available",
-            "severity": "Moderate",
-            "risk_score": 0,
-            "description": reason,
-            "visual_evidence": "Use the OpenCV screening result as a supplementary image-based indicator only.",
-            "possible_causes": [],
-            "cause": "Undetermined from image",
-            "solution": "Professional structural inspection before selecting a repair method.",
-            "recommended_repair": "Do not select a structural repair method from this automated result alone.",
-            "urgency": "Professional inspection recommended if damage is suspected.",
-            "recommendation": "Configure OPENAI_API_KEY in Streamlit Secrets for AI visual analysis.",
-        }
-    )
-
-
-def analyze_image_with_ai(image, structure_context):
-    api_key = get_api_key()
-    if not api_key:
-        return ai_fallback("OPENAI_API_KEY is not configured.")
-
-    prompt = f"""
-You are a structural-damage visual screening assistant for STRUCTURE DOCTOR AI.
-This is a PRELIMINARY visual inspection only. Do not certify safety, structural capacity,
-remaining strength, crack depth, reinforcement condition, or hidden damage from a photograph.
-Do not claim that a structure is safe or unsafe solely from this image.
-
-Inspect the supplied image and return ONLY valid JSON with these keys:
-crack_detected, damage_type, location, severity, risk_score, description,
-visual_evidence, possible_causes, cause, solution, recommended_repair, urgency, recommendation.
-
-severity must be one of: Low, Moderate, High, Critical.
-risk_score must be an integer from 0 to 100 and represent a preliminary visual concern score,
-not a calculated structural capacity.
-
-If a crack/damage is visible, EVERY detected defect must have:
-1. cause
-2. solution
-3. recommended_repair
-4. urgency
-
-Important limitations:
-- Do not infer crack depth from the photograph.
-- Do not determine actual load capacity.
-- Do not certify structural safety.
-- Do not invent measurements that cannot be visually established.
-- If the image is unclear, say so.
-- If severe visible damage is present, recommend restricted access and prompt qualified structural inspection.
-- Recommended repairs must be framed as preliminary guidance pending site verification.
-
-Inspection context:
-{json.dumps(structure_context, ensure_ascii=False)}
-"""
-
-    try:
-        client = OpenAI(api_key=api_key)
-        image_b64 = base64.b64encode(image_to_jpeg_bytes(image)).decode("utf-8")
-        response = client.responses.create(
-            model="gpt-4.1-mini",
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": prompt},
-                        {
-                            "type": "input_image",
-                            "image_url": f"data:image/jpeg;base64,{image_b64}",
-                        },
-                    ],
-                }
-            ],
-        )
-        parsed = extract_json_from_response(response.output_text)
-        parsed["available"] = True
-        return clean_ai_result(parsed)
-    except Exception as exc:
-        return ai_fallback(f"AI analysis failed: {exc}")
-
-
-# -----------------------------
-# OPENCV IMAGE SCREENING
-# -----------------------------
-def format_measurement(value, scale_mm_per_px=None):
-    if scale_mm_per_px and scale_mm_per_px > 0:
-        return f"{value * scale_mm_per_px:.2f} mm"
-    return f"{value:.0f} px"
-
-
-def classify_crack(length_px, width_px):
-    if length_px <= 0:
-        return "Not classified"
-    ratio = length_px / max(width_px, 1)
-    if ratio >= 20:
-        return "Long / narrow crack-like feature"
-    if ratio >= 8:
-        return "Moderate linear crack-like feature"
-    return "Short / wider damage-like feature"
-
-
-def cv_analyze(image, scale_mm_per_px=None):
-    rgb = np.array(image.convert("RGB"))
+def cv_analyze(uploaded_file, scale_mm_per_pixel=0.0):
+    image = Image.open(uploaded_file).convert("RGB")
+    rgb = np.array(image)
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 17))
-    blackhat = cv2.morphologyEx(blur, cv2.MORPH_BLACKHAT, kernel)
-    _, dark_mask = cv2.threshold(blackhat, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # Dark-line / edge enhancement.
+    blackhat_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 17))
+    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, blackhat_kernel)
 
-    edges = cv2.Canny(blur, 50, 150)
-    combined = cv2.bitwise_or(dark_mask, edges)
-
-    clean_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    combined = cv2.morphologyEx(combined, cv2.MORPH_CLOSE, clean_kernel, iterations=2)
-    combined = cv2.morphologyEx(combined, cv2.MORPH_OPEN, clean_kernel, iterations=1)
-
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(combined, 8)
-    h, w = gray.shape
-    image_area = h * w
-    candidates = []
-
-    for i in range(1, num_labels):
-        x, y, bw, bh, area = stats[i]
-        if area < max(20, image_area * 0.00003):
-            continue
-        if area > image_area * 0.15:
-            continue
-        aspect = max(bw, bh) / max(1, min(bw, bh))
-        if aspect < 2.0:
-            continue
-        score = area * min(aspect, 30)
-        candidates.append((score, x, y, bw, bh, area))
-
-    overlay = bgr.copy()
-    mask = np.zeros_like(gray)
-
-    if not candidates:
-        return {
-            "detected": False,
-            "length_px": 0,
-            "width_px": 0,
-            "length_text": "Not detected",
-            "width_text": "Not detected",
-            "classification": "No strong linear feature detected",
-            "overlay": Image.fromarray(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)),
-            "mask": Image.fromarray(mask),
-        }
-
-    candidates.sort(reverse=True)
-    _, x, y, bw, bh, area = candidates[0]
-    cv2.rectangle(overlay, (x, y), (x + bw, y + bh), (40, 80, 220), 3)
-    cv2.rectangle(mask, (x, y), (x + bw, y + bh), 255, -1)
-
-    length_px = float(max(bw, bh))
-    width_proxy_px = float(max(1, min(bw, bh) * 0.18))
-
-    return {
-        "detected": True,
-        "length_px": length_px,
-        "width_px": width_proxy_px,
-        "length_text": format_measurement(length_px, scale_mm_per_px),
-        "width_text": format_measurement(width_proxy_px, scale_mm_per_px),
-        "classification": classify_crack(length_px, width_proxy_px),
-        "overlay": Image.fromarray(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)),
-        "mask": Image.fromarray(mask),
-    }
-
-
-# -----------------------------
-# RISK ENGINE ADAPTER
-# -----------------------------
-def run_risk_engine(inputs, ai_result, cv_result):
-    enriched = dict(inputs)
-    enriched["ai_result"] = ai_result
-    enriched["cv_result"] = {
-        "detected": cv_result.get("detected", False),
-        "length_px": cv_result.get("length_px", 0),
-        "width_px": cv_result.get("width_px", 0),
-    }
-
-    try:
-        result = assess_risk(enriched)
-        if not isinstance(result, dict):
-            result = {}
-    except Exception as exc:
-        # Safe local fallback so the app still runs if the project's risk_engine API differs.
-        score = int(ai_result.get("risk_score", 0))
-        if ai_result.get("severity") == "Critical":
-            score = max(score, 85)
-        elif ai_result.get("severity") == "High":
-            score = max(score, 65)
-        elif ai_result.get("severity") == "Moderate":
-            score = max(score, 35)
-        level = "Low" if score < 25 else "Moderate" if score < 50 else "High" if score < 75 else "Critical"
-        result = {
-            "risk_score": score,
-            "risk_level": level,
-            "severity": ai_result.get("severity", "Moderate"),
-            "explanation": f"Fallback screening logic used because the risk engine could not be executed: {exc}",
-            "recommendations": [],
-            "safety_override": False,
-        }
-
-    score = result.get("risk_score", ai_result.get("risk_score", 0))
-    try:
-        score = int(float(score))
-    except Exception:
-        score = int(ai_result.get("risk_score", 0))
-    score = max(0, min(100, score))
-
-    level = str(result.get("risk_level", "")).strip() or (
-        "Low" if score < 25 else "Moderate" if score < 50 else "High" if score < 75 else "Critical"
+    _, mask = cv2.threshold(
+        blackhat, max(8, int(np.percentile(blackhat, 88))), 255, cv2.THRESH_BINARY
     )
 
-    result["risk_score"] = score
-    result["risk_level"] = level
-    result["severity"] = result.get("severity") or ai_result.get("severity", "Moderate")
-    result["explanation"] = result.get("explanation") or "Preliminary image/context screening only."
-    result["recommendations"] = result.get("recommendations") or []
-    return result
+    # Also retain strong Canny edges to make the demo more tolerant of different images.
+    edges = cv2.Canny(gray, 50, 150)
+    combined = cv2.bitwise_or(mask, edges)
+
+    kernel = np.ones((3, 3), np.uint8)
+    combined = cv2.morphologyEx(combined, cv2.MORPH_OPEN, kernel)
+    combined = cv2.morphologyEx(combined, cv2.MORPH_CLOSE, kernel)
+
+    # Remove tiny noise.
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(combined, 8)
+    clean = np.zeros_like(combined)
+    candidates = []
+    for i in range(1, n):
+        area = int(stats[i, cv2.CC_STAT_AREA])
+        if area >= max(20, int(rgb.shape[0] * rgb.shape[1] * 0.00005)):
+            candidates.append((area, i))
+    candidates.sort(reverse=True)
+
+    for area, i in candidates[:12]:
+        clean[labels == i] = 255
+
+    # A crack is usually thin. Keep a conservative region and derive a visual score.
+    contours, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if not contours:
+        overlay = image.copy()
+        return {
+            "image": image,
+            "overlay": overlay,
+            "detected": False,
+            "confidence": 28,
+            "length_px": 0.0,
+            "width_px": 0.0,
+            "area_px": 0.0,
+            "start": (0, 0),
+            "end": (0, 0),
+            "mask": clean,
+        }
+
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    contour = contours[0]
+    area_px = float(cv2.contourArea(contour))
+    x, y, w, h = cv2.boundingRect(contour)
+
+    # Estimate a path-like length from the bounding-box diagonal/perimeter.
+    length_px = max(float(np.hypot(w, h)), float(cv2.arcLength(contour, False)) * 0.45)
+    length_px = min(length_px, float(max(rgb.shape[:2]) * 2.5))
+
+    # Area / length gives a rough visible width proxy.
+    width_px = max(1.0, min(80.0, (area_px / max(length_px, 1.0)) * 1.7))
+
+    # Endpoints are approximated from farthest contour points.
+    pts = contour.reshape(-1, 2)
+    if len(pts) >= 2:
+        # Fast approximation: extremes along y/x.
+        p1 = pts[np.argmin(pts[:, 0] + pts[:, 1])]
+        p2 = pts[np.argmax(pts[:, 0] + pts[:, 1])]
+        start = (int(p1[0]), int(p1[1]))
+        end = (int(p2[0]), int(p2[1]))
+    else:
+        start, end = (x, y), (x + w, y + h)
+
+    # Heuristic confidence: stronger, thinner, longer candidate -> higher.
+    density = min(1.0, area_px / max(rgb.shape[0] * rgb.shape[1] * 0.002, 1))
+    thinness = max(0.0, 1.0 - min(width_px / 25.0, 1.0))
+    extent = min(1.0, length_px / max(rgb.shape[0], rgb.shape[1]))
+    confidence = int(np.clip(45 + 28 * density + 17 * thinness + 10 * extent, 35, 94))
+
+    overlay_bgr = bgr.copy()
+    overlay_bgr[clean > 0] = (0, 0, 255)
+    overlay_bgr = cv2.addWeighted(bgr, 0.72, overlay_bgr, 0.28, 0)
+
+    cv2.circle(overlay_bgr, start, 7, (0, 220, 0), -1)
+    cv2.circle(overlay_bgr, end, 7, (255, 150, 0), -1)
+    cv2.putText(
+        overlay_bgr,
+        "AI-assisted crack region",
+        (20, 35),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.75,
+        (0, 0, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    overlay = Image.fromarray(cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB))
+
+    return {
+        "image": image,
+        "overlay": overlay,
+        "detected": confidence >= 48,
+        "confidence": confidence,
+        "length_px": length_px,
+        "width_px": width_px,
+        "area_px": area_px,
+        "start": start,
+        "end": end,
+        "mask": clean,
+    }
+
+
+def format_measurement(px, scale, unit="mm"):
+    if px <= 0:
+        return "Not clearly measurable"
+    if scale and scale > 0:
+        return f"{px * scale:.2f} {unit}"
+    return f"{px:.0f} px (no scale provided)"
+
+
+def classify_crack(user_type, cv):
+    if user_type != "Auto / unknown":
+        return user_type
+    if not cv["detected"]:
+        return "Not clearly detected"
+
+    sx, sy = cv["start"]
+    ex, ey = cv["end"]
+    dx, dy = abs(ex - sx), abs(ey - sy)
+
+    if dy > dx * 2:
+        return "Vertical"
+    if dx > dy * 2:
+        return "Horizontal"
+    if dx > 20 and dy > 20:
+        return "Diagonal"
+    return "Random / irregular"
 
 
 # -----------------------------
-# PDF REPORT
+# PDF report
 # -----------------------------
-def ptext(value, style):
-    return Paragraph(esc(value).replace("\n", "<br/>"), style)
-
-
-def make_pdf(inputs, image, cv_result, ai_result, risk_result):
+def make_pdf(result, info, recommendation):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
         rightMargin=16 * mm,
         leftMargin=16 * mm,
-        topMargin=16 * mm,
-        bottomMargin=16 * mm,
-        title=APP_TITLE,
-        author=APP_TITLE,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
     )
 
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        "TitleCustom", parent=styles["Title"], fontSize=20, leading=24,
-        alignment=TA_CENTER, textColor=colors.HexColor("#0F172A"), spaceAfter=5,
+    styles.add(
+        ParagraphStyle(
+            name="Title2",
+            parent=styles["Title"],
+            fontSize=24,
+            leading=28,
+            textColor=colors.HexColor("#1D3542"),
+        )
     )
-    subtitle_style = ParagraphStyle(
-        "Subtitle", parent=styles["Normal"], fontSize=9.5, leading=13,
-        alignment=TA_CENTER, textColor=colors.HexColor("#64748B"), spaceAfter=14,
-    )
-    h_style = ParagraphStyle(
-        "H", parent=styles["Heading2"], fontSize=12.5, leading=16,
-        textColor=colors.HexColor("#0F172A"), spaceBefore=8, spaceAfter=7,
-    )
-    body = ParagraphStyle(
-        "Body", parent=styles["BodyText"], fontSize=9, leading=13,
-        textColor=colors.HexColor("#334155"),
-    )
-    small = ParagraphStyle(
-        "Small", parent=body, fontSize=8, leading=11,
-        textColor=colors.HexColor("#64748B"),
+    styles.add(
+        ParagraphStyle(
+            name="Small2",
+            parent=styles["BodyText"],
+            fontSize=8.5,
+            leading=11,
+            textColor=colors.HexColor("#56636C"),
+        )
     )
 
     story = [
-        Paragraph(APP_TITLE, title_style),
-        Paragraph("Preliminary Structural Damage Screening Report", subtitle_style),
+        Paragraph("STRUCTURE DOCTOR", styles["Title2"]),
+        Paragraph("AI-Assisted Crack Detection & Preliminary Assessment", styles["Heading2"]),
+        Spacer(1, 5 * mm),
         Paragraph(
-            "IMPORTANT: This report is an image-based preliminary screening aid. It does not determine actual structural load capacity, certify safety, establish crack depth, or replace inspection by a qualified structural professional.",
-            small,
+            f"Inspection timestamp: {datetime.now().strftime('%d %b %Y, %H:%M')}",
+            styles["Small2"],
         ),
-        Spacer(1, 8),
+        Spacer(1, 5 * mm),
     ]
 
-    # Uploaded image, preserving aspect ratio.
-    image_buffer = io.BytesIO(image_to_jpeg_bytes(image))
-    max_w = 165 * mm
-    max_h = 105 * mm
-    iw, ih = image.size
-    scale = min(max_w / max(iw, 1), max_h / max(ih, 1))
-    story.append(RLImage(image_buffer, width=iw * scale, height=ih * scale))
-    story.append(Spacer(1, 10))
-
-    story.append(Paragraph("1. Structure Information", h_style))
-    info_rows = [
-        ["Structure Type", inputs.get("structure_type", "")],
-        ["Building Type", inputs.get("building_type", "")],
-        ["Element", inputs.get("element", "")],
-        ["Primary Material", inputs.get("material", "")],
-        ["Location on Structure", inputs.get("location", "")],
-        ["Building Age", inputs.get("building_age", "")],
-        ["Environment", inputs.get("environment", "")],
-        ["Observed Crack Type", inputs.get("crack_type", "")],
-        ["Applied Load", f"{inputs.get('applied_load', '')} {inputs.get('load_unit', '')}".strip()],
-        ["Load Type", inputs.get("load_type", "")],
-        ["Load Location", inputs.get("load_location", "")],
+    data = [
+        ["Building type", info["building_type"]],
+        ["Structural element", info["element"]],
+        ["Approx. building age", f'{info["age"]:.0f} years'],
+        ["Material", info["material"]],
+        ["Crack type", result["crack_type"]],
+        ["Preliminary severity", result["severity"]],
+        ["Confidence", f'{result["confidence"]}%'],
+        ["Estimated length", result["length_text"]],
+        ["Estimated width", result["width_text"]],
     ]
-    info_table = Table([[ptext(a, body), ptext(b, body)] for a, b in info_rows], colWidths=[55 * mm, 120 * mm])
-    info_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F1F5F9")),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 7),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    ]))
-    story.extend([info_table, Spacer(1, 9)])
-
-    story.append(Paragraph("2. Image-Based Crack / Damage Screening", h_style))
-    cv_rows = [
-        ["OpenCV feature detected", "Yes" if cv_result.get("detected") else "No"],
-        ["Image-based length", cv_result.get("length_text", "Not detected")],
-        ["Image-based width proxy", cv_result.get("width_text", "Not detected")],
-        ["Feature classification", cv_result.get("classification", "")],
-    ]
-    cv_table = Table([[ptext(a, body), ptext(b, body)] for a, b in cv_rows], colWidths=[55 * mm, 120 * mm])
-    cv_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F8FAFC")),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
-    story.extend([cv_table, Spacer(1, 9)])
-
-    story.append(Paragraph("3. AI Visual Findings", h_style))
-    ai_rows = [
-        ["Crack / Damage Detected", "Yes" if ai_result.get("crack_detected") else "No"],
-        ["Damage Type", ai_result.get("damage_type", "")],
-        ["Location", ai_result.get("location", "")],
-        ["Severity", ai_result.get("severity", "")],
-        ["Preliminary Visual Risk Score", str(ai_result.get("risk_score", 0)) + "/100"],
-        ["Description", ai_result.get("description", "")],
-        ["Visual Evidence", ai_result.get("visual_evidence", "")],
-    ]
-    ai_table = Table([[ptext(a, body), ptext(b, body)] for a, b in ai_rows], colWidths=[55 * mm, 120 * mm])
-    ai_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F1F5F9")),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
-    story.extend([ai_table, Spacer(1, 7)])
-
-    causes = ai_result.get("possible_causes", [])
-    if causes:
-        story.append(Paragraph("Possible Causes", h_style))
-        for cause in causes:
-            story.append(Paragraph("• " + esc(cause), body))
-        story.append(Spacer(1, 5))
-
-    story.append(Paragraph("4. Cause + Solution + Recommended Repair + Urgency", h_style))
-    repair_rows = [
-        ["Cause", ai_result.get("cause", "Undetermined from image")],
-        ["Solution", ai_result.get("solution", "Professional structural inspection before selecting a repair method.")],
-        ["Recommended Repair", ai_result.get("recommended_repair", "Professional inspection before repair selection.")],
-        ["Urgency", ai_result.get("urgency", "Professional inspection recommended.")],
-    ]
-    repair_table = Table([[ptext(a, body), ptext(b, body)] for a, b in repair_rows], colWidths=[48 * mm, 127 * mm])
-    repair_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F8FAFC")),
-        ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#CBD5E1")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 7),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-        ("TOPPADDING", (0, 0), (-1, -1), 7),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-    ]))
-    story.extend([
-        repair_table,
-        Spacer(1, 7),
-        Paragraph(
-            "Repair guidance is preliminary and must not be treated as a certified structural repair design. Confirm the defect mechanism, dimensions, loading, reinforcement/detailing and site condition before repair.",
-            small,
-        ),
-    ])
-
-    story.append(Paragraph("5. Risk Assessment", h_style))
-    risk_rows = [
-        ["Risk Score", f"{risk_result.get('risk_score', 0)}/100"],
-        ["Risk Level", risk_result.get("risk_level", "")],
-        ["Severity", risk_result.get("severity", "")],
-        ["Explanation", risk_result.get("explanation", "")],
-    ]
-    risk_table = Table([[ptext(a, body), ptext(b, body)] for a, b in risk_rows], colWidths=[55 * mm, 120 * mm])
-    risk_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F1F5F9")),
-        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
-    story.extend([risk_table, Spacer(1, 8)])
-
-    recommendations = risk_result.get("recommendations", [])
-    if recommendations:
-        story.append(Paragraph("6. Recommended Actions", h_style))
-        for item in recommendations:
-            story.append(Paragraph("• " + esc(item), body))
-        story.append(Spacer(1, 5))
-
-    if ai_result.get("recommendation"):
-        story.append(Paragraph("AI Recommendation", h_style))
-        story.append(Paragraph(esc(ai_result.get("recommendation")), body))
-
-    story.append(Paragraph("7. IMPORTANT SAFETY NOTICE", h_style))
-    story.append(
-        Paragraph(
-            "This application is a preliminary screening tool. A photograph and user-entered load information cannot establish actual structural capacity or certify safety. If there is significant cracking, spalling, exposed reinforcement, deformation, instability, falling material, or other potentially dangerous damage, keep people away from the affected area as appropriate and obtain an on-site assessment by a qualified structural professional.",
-            body,
+    table = Table(data, colWidths=[52 * mm, 118 * mm])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F1F5F7")),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D9E2E8")),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
         )
     )
+    story += [table, Spacer(1, 6 * mm)]
+
+    story.append(Paragraph("What was observed", styles["Heading2"]))
+    story.append(Paragraph(result["observation"], styles["BodyText"]))
+    story.append(Spacer(1, 3 * mm))
+
+    story.append(Paragraph("Possible explanations", styles["Heading2"]))
+    for item in result["possible_causes"]:
+        story.append(Paragraph("• " + item, styles["BodyText"]))
+    story.append(Spacer(1, 3 * mm))
+
+    story.append(Paragraph("Recommended next step", styles["Heading2"]))
+    story.append(Paragraph(recommendation["next_step"], styles["BodyText"]))
+    story.append(Spacer(1, 3 * mm))
+
+    story.append(Paragraph("Safe immediate actions", styles["Heading2"]))
+    for item in recommendation["safe_actions"]:
+        story.append(Paragraph("• " + item, styles["BodyText"]))
+    story.append(Spacer(1, 3 * mm))
+
+    story.append(Paragraph("Possible maintenance / remedy category", styles["Heading2"]))
+    story.append(Paragraph(recommendation["remedy"], styles["BodyText"]))
+    story.append(Spacer(1, 5 * mm))
+
+    disclaimer = (
+        "<b>IMPORTANT:</b> This report is a preliminary visual screening output. "
+        "It does not determine actual structural strength, load-bearing capacity, "
+        "structural safety, engineering diagnosis, design, repair specification or certification. "
+        "Possible causes and remedies are not confirmed from an image alone. "
+        "A qualified professional should inspect potentially significant damage."
+    )
+    story.append(Paragraph(disclaimer, styles["Small2"]))
 
     doc.build(story)
     buffer.seek(0)
@@ -804,312 +485,407 @@ def make_pdf(inputs, image, cv_result, ai_result, risk_result):
 
 
 # -----------------------------
-# SIDEBAR
+# Sidebar / landing
 # -----------------------------
 with st.sidebar:
-    st.markdown("# 🏗️")
-    st.markdown(f"## {APP_TITLE}")
-    st.caption("Preliminary structural damage screening")
+    st.markdown("## 🏗️ Structure Doctor")
+    st.caption("See the Crack. Understand the Risk. Act Early.")
     page = st.radio(
-        "Navigation",
+        "Navigate",
         ["Home", "Analyze", "Track Change", "Inspection History"],
-        label_visibility="collapsed",
+        index=0,
     )
     st.divider()
-    st.caption("AI + OpenCV + Risk Engine + PDF + SQLite")
+    st.markdown("### Prototype status")
+    st.caption("AI-assisted / computer-vision demo")
+    st.caption("Preliminary visual screening only.")
+    st.caption("Not an engineering certification tool.")
 
 
-# -----------------------------
-# HOME
-# -----------------------------
-if page == "Home":
-    render_html(
-        f"""
-        <div class="main-title">{APP_TITLE}</div>
-        <div class="subtitle">Professional preliminary screening for visible cracks and structural damage indicators.</div>
-        <div class="card">
-            <div class="section-title">What this version does</div>
-            <div class="muted">Upload a structural image, provide inspection context and applied-load information, run image screening, receive AI visual findings, generate preliminary repair guidance, save the inspection, and export a professional PDF report.</div>
-        </div>
-        """
-    )
-    c1, c2, c3, c4 = st.columns(4)
-    for col, title, text in [
-        (c1, "📷 AI Vision", "Visual crack / damage screening"),
-        (c2, "🔎 OpenCV", "Image-based feature detection"),
-        (c3, "📊 Risk Engine", "Preliminary risk assessment"),
-        (c4, "📄 PDF", "Cause + solution + repair + urgency"),
-    ]:
-        with col:
-            render_html(f'<div class="metric-card"><div class="metric-value">{title}</div><div class="metric-label">{text}</div></div>')
-
-    st.markdown("### Workflow")
-    st.write("1. Enter structure information and applied load context.")
-    st.write("2. Upload a clear photo of the affected area.")
-    st.write("3. Run OpenCV + AI visual screening.")
-    st.write("4. Review risk, cause, solution, recommended repair and urgency.")
-    st.write("5. Download the PDF and optionally save the inspection to history.")
+def home():
     st.markdown(
-        '<div class="notice"><b>Safety:</b> The app is a preliminary screening aid. It does not certify structural safety or actual load capacity.</div>',
+        """
+<div class="hero">
+  <div class="tech">AI + COMPUTER VISION + CIVIL ENGINEERING</div>
+  <h1>STRUCTURE<br>DOCTOR</h1>
+  <div class="tagline">See the Crack. Understand the Risk. Act Early.</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### From a simple photo to clearer crack understanding")
+    cols = st.columns(5)
+    steps = [
+        ("01", "Upload", "Crack image"),
+        ("02", "Detect", "AI-assisted region"),
+        ("03", "Measure", "Length / width"),
+        ("04", "Assess", "Type / severity"),
+        ("05", "Act", "Guidance / report"),
+    ]
+    for c, (n, title, sub) in zip(cols, steps):
+        with c:
+            st.markdown(
+                f"""
+<div class="step">
+<div class="step-number">{n}</div>
+<b>{title}</b><br><span class="small">{sub}</span>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("---")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("### Why Structure Doctor?")
+        st.write(
+            "Small cracks are easy to overlook. The prototype helps users document "
+            "visible cracks, understand preliminary indicators, compare changes over time, "
+            "and decide when professional inspection should be sought."
+        )
+    with c2:
+        st.markdown("### What it can show")
+        st.write(
+            "Crack detection overlay • estimated measurements • classification • "
+            "preliminary severity • possible causes • safe immediate actions • "
+            "possible maintenance category • inspection recommendation • PDF report."
+        )
+
+    st.markdown(
+        """
+<div class="warning">
+<b>Safety boundary:</b> A photo cannot confirm structural capacity or certify a repair.
+Structure Doctor is a preliminary visual screening prototype. Significant, uncertain,
+rapidly changing, or potentially structural damage should be professionally inspected.
+</div>
+""",
         unsafe_allow_html=True,
     )
 
 
-# -----------------------------
-# ANALYZE
-# -----------------------------
-elif page == "Analyze":
-    render_html('<div class="main-title">Structural Damage Analysis</div><div class="subtitle">Enter context first, then upload a clear image for combined OpenCV and AI screening.</div>')
+def analyze_page():
+    st.title("🔎 Crack Analysis")
+    st.caption("Enter structural context first, then upload the crack image.")
 
-    with st.form("inspection_form"):
-        st.markdown("### 1. Structure Information")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            structure_type = st.selectbox("Structure Type", ["Building", "Bridge", "Industrial Structure", "Retaining Wall", "Other"])
-            building_type = st.selectbox("Building Type", ["Residential", "Commercial", "Industrial", "Institutional", "Infrastructure", "Other"])
-            element = st.selectbox("Structural Element", ["Beam", "Column", "Slab", "Wall", "Foundation", "Floor", "Roof", "Other"])
-        with c2:
-            material = st.selectbox("Primary Material", ["Reinforced Concrete", "Concrete", "Steel", "Masonry", "Brick", "Stone", "Other"])
-            location = st.text_input("Location on Structure", placeholder="e.g. underside of beam near support")
-            building_age = st.text_input("Building / Structure Age", placeholder="e.g. 18 years")
-        with c3:
-            environment = st.selectbox("Environment", ["Indoor / Dry", "Outdoor", "Coastal", "Humid", "Industrial / Chemical", "Water-Exposed", "Unknown"])
-            crack_type = st.selectbox("Observed Crack Type", ["Unknown / Need AI Assessment", "Vertical", "Horizontal", "Diagonal", "Map / Network", "Longitudinal", "Spalling / Concrete Damage", "Other"])
-            scale = st.number_input("Optional scale (mm per pixel)", min_value=0.0, value=0.0, step=0.001, format="%.3f", help="Use only if you have a reliable image scale reference. Otherwise the app reports pixels.")
+    st.markdown("### 01 — Structural information")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        building_type = st.selectbox(
+            "Building / structure type",
+            ["Residential", "Commercial", "Institutional", "Industrial", "Bridge / infrastructure", "Other"],
+        )
+    with c2:
+        element = st.selectbox(
+            "Structural element",
+            ["Wall", "Slab", "Beam", "Column", "Foundation", "Masonry", "Other / unknown"],
+        )
+    with c3:
+        age = st.number_input("Approx. building age (years)", 0, 200, 10)
 
-        st.markdown("### 2. Applied Load Context")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            applied_load = st.text_input("Applied Load", placeholder="e.g. 2500")
-        with c2:
-            load_unit = st.selectbox("Load Unit", ["kN", "N", "kg", "tonne", "kN/m", "kN/m²", "Other"])
-        with c3:
-            load_type = st.selectbox("Load Type", ["Dead Load", "Live Load", "Point Load", "Distributed Load", "Impact / Dynamic", "Unknown"])
-        with c4:
-            load_location = st.text_input("Load Location", placeholder="e.g. center of slab")
-
-        st.markdown("### 3. Condition Indicators")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            water_leakage = st.checkbox("Water leakage / dampness")
-        with c2:
-            rust_staining = st.checkbox("Rust staining / exposed reinforcement")
-        with c3:
-            deformation = st.checkbox("Visible deformation / displacement")
-
-        uploaded = st.file_uploader("Upload structural image", type=["jpg", "jpeg", "png", "webp"])
-        submitted = st.form_submit_button("🔍 Analyze Structure", use_container_width=True, type="primary")
-
-    if uploaded:
-        image = Image.open(uploaded).convert("RGB")
-        st.image(image, caption="Uploaded inspection image", use_container_width=True)
-
-    if submitted:
-        if not uploaded:
-            st.error("Please upload a structural image before analysis.")
-            st.stop()
-
-        image = Image.open(uploaded).convert("RGB")
-        scale_value = scale if scale > 0 else None
-        inputs = {
-            "structure_type": structure_type,
-            "building_type": building_type,
-            "element": element,
-            "material": material,
-            "location": location,
-            "building_age": building_age,
-            "environment": environment,
-            "crack_type": crack_type,
-            "applied_load": applied_load,
-            "load_unit": load_unit,
-            "load_type": load_type,
-            "load_location": load_location,
-            "water_leakage": water_leakage,
-            "rust_staining": rust_staining,
-            "deformation": deformation,
-        }
-
-        with st.spinner("Running OpenCV image screening..."):
-            cv_result = cv_analyze(image, scale_value)
-
-        with st.spinner("Running AI visual analysis..."):
-            ai_result = analyze_image_with_ai(image, inputs)
-
-        with st.spinner("Running risk assessment..."):
-            risk_result = run_risk_engine(inputs, ai_result, cv_result)
-
-        # Store in session for PDF / download / save.
-        st.session_state["last_analysis"] = {
-            "inputs": inputs,
-            "image": image,
-            "cv": cv_result,
-            "ai": ai_result,
-            "risk": risk_result,
-        }
-
-    if "last_analysis" in st.session_state:
-        data = st.session_state["last_analysis"]
-        inputs = data["inputs"]
-        image = data["image"]
-        cv_result = data["cv"]
-        ai_result = data["ai"]
-        risk_result = data["risk"]
-
-        st.divider()
-        render_html('<div class="section-title">Analysis Result</div>')
-
-        c1, c2, c3, c4 = st.columns(4)
-        metrics = [
-            (c1, "Risk Score", f"{risk_result.get('risk_score', 0)}/100"),
-            (c2, "Risk Level", risk_result.get("risk_level", "Unknown")),
-            (c3, "Severity", ai_result.get("severity", "Unknown")),
-            (c4, "AI Status", "Available" if ai_result.get("available") else "Unavailable"),
-        ]
-        for col, label, value in metrics:
-            with col:
-                render_html(f'<div class="metric-card"><div class="metric-label">{esc(label)}</div><div class="metric-value">{esc(value)}</div></div>')
-
-        if not ai_result.get("available"):
-            st.warning("AI visual analysis is unavailable. OpenCV screening and the preliminary risk workflow are still shown. Add OPENAI_API_KEY to Streamlit Secrets to enable AI analysis.")
-
-        if cv_result.get("detected"):
-            st.markdown("### OpenCV Image Screening")
-            a, b = st.columns(2)
-            with a:
-                st.image(cv_result["overlay"], caption="Detected image-based feature", use_container_width=True)
-            with b:
-                st.image(cv_result["mask"], caption="Detection mask", use_container_width=True)
-            st.write(f"**Image-based length:** {cv_result.get('length_text')}")
-            st.write(f"**Image-based width proxy:** {cv_result.get('width_text')}")
-            st.caption("These are image-processing measurements/proxies. They are not certified crack dimensions unless a reliable scale and field verification are available.")
-        else:
-            st.info("OpenCV did not detect a strong linear crack-like feature. This does not prove that no damage exists.")
-
-        st.markdown("### AI Visual Findings")
-        render_html(
-            f"""
-            <div class="card">
-                <p><b>Damage type:</b> {esc(ai_result.get('damage_type'))}</p>
-                <p><b>Location:</b> {esc(ai_result.get('location'))}</p>
-                <p><b>Description:</b> {esc(ai_result.get('description'))}</p>
-                <p><b>Visual evidence:</b> {esc(ai_result.get('visual_evidence'))}</p>
-            </div>
-            """
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        material = st.selectbox(
+            "Material",
+            ["Reinforced concrete", "Masonry / brick", "Plaster / finish", "Steel", "Other / unknown"],
+        )
+    with c2:
+        crack_type_input = st.selectbox(
+            "Known crack pattern",
+            ["Auto / unknown", "Vertical", "Horizontal", "Diagonal", "Random / irregular", "Map-like"],
+        )
+    with c3:
+        scale = st.number_input(
+            "Optional scale (mm per pixel)",
+            min_value=0.0,
+            max_value=20.0,
+            value=0.0,
+            step=0.01,
+            help="Only enter this if you have a reliable image scale/reference. Otherwise measurements remain pixel estimates.",
         )
 
-        if ai_result.get("possible_causes"):
-            st.markdown("### Possible Causes")
-            for cause in ai_result["possible_causes"]:
-                st.write(f"• {cause}")
+    st.markdown("### 02 — Visible condition indicators")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        seepage = st.selectbox("Water seepage / dampness", ["Unknown", "No", "Yes"])
+    with c2:
+        rust = st.selectbox("Visible rust / reinforcement", ["Unknown", "No", "Yes"])
+    with c3:
+        progression = st.selectbox("Crack increasing?", ["Unknown", "No", "Yes"])
+    with c4:
+        event = st.selectbox("Recent earthquake / impact / unusual event", ["Unknown", "No", "Yes"])
 
-        st.markdown("### Cause + Solution + Recommended Repair + Urgency")
-        repair_data = [
-            ("Cause", ai_result.get("cause", "Undetermined from image")),
-            ("Solution", ai_result.get("solution", "Professional structural inspection before selecting a repair method.")),
-            ("Recommended Repair", ai_result.get("recommended_repair", "Professional inspection before repair selection.")),
-            ("Urgency", ai_result.get("urgency", "Professional inspection recommended.")),
-        ]
-        for title, value in repair_data:
-            render_html(
-                f'<div class="repair-box"><b>{esc(title)}</b><br/><span class="muted">{esc(value)}</span></div>'
+    c1, c2 = st.columns(2)
+    with c1:
+        deformation = st.selectbox("Visible deformation / displacement", ["Unknown", "No", "Yes"])
+    with c2:
+        sound = st.selectbox("Unusual hollow sound / loose area", ["Unknown", "No", "Yes"])
+
+    st.markdown("### 03 — Crack image")
+    uploaded = st.file_uploader(
+        "Upload JPG, JPEG or PNG",
+        type=["jpg", "jpeg", "png"],
+        help="For the best comparison, use a clear image with stable lighting and a reference scale if available.",
+    )
+
+    if uploaded is None:
+        st.info("Upload an image to start the analysis.")
+        return
+
+    if st.button("🚀 Analyze Crack", type="primary", use_container_width=True):
+        with st.spinner("Preprocessing image and running AI-assisted visual screening..."):
+            cv = cv_analyze(uploaded, scale)
+
+            info = {
+                "building_type": building_type,
+                "element": element,
+                "age": float(age),
+                "material": material,
+                "seepage": seepage,
+                "rust": rust,
+                "progression": progression,
+                "event": event,
+                "deformation": deformation,
+                "sound": sound,
+            }
+
+            ctype = classify_crack(crack_type_input, cv)
+            inputs = {
+                **info,
+                "crack_type": ctype,
+                "width_mm": cv["width_px"] * scale if scale > 0 else 0,
+                "length_mm": cv["length_px"] * scale if scale > 0 else 0,
+                "detected": cv["detected"],
+                "confidence": cv["confidence"],
+            }
+
+            result = assess_risk(inputs)
+            result["crack_type"] = ctype
+            result["confidence"] = cv["confidence"]
+            result["length_text"] = format_measurement(cv["length_px"], scale)
+            result["width_text"] = format_measurement(cv["width_px"], scale)
+            result["start"] = cv["start"]
+            result["end"] = cv["end"]
+            result["observation"] = (
+                "A crack-like visual region was detected and highlighted for preliminary review."
+                if cv["detected"]
+                else "No sufficiently clear crack-like region was confidently detected."
+            )
+            result["possible_causes"] = result["possible_causes"]
+
+            recommendation = build_recommendation(inputs, result)
+            result["recommendation"] = recommendation
+
+            st.session_state["analysis"] = {
+                "cv": cv,
+                "result": result,
+                "info": info,
+                "recommendation": recommendation,
+            }
+
+    analysis = st.session_state.get("analysis")
+    if not analysis:
+        return
+
+    cv = analysis["cv"]
+    result = analysis["result"]
+    info = analysis["info"]
+    recommendation = analysis["recommendation"]
+
+    st.markdown("---")
+    st.markdown("## 04 — See what the AI sees")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**ORIGINAL IMAGE**")
+        st.image(cv["image"], use_container_width=True)
+    with c2:
+        st.markdown("**AI-ASSISTED DETECTION OVERLAY**")
+        st.image(cv["overlay"], use_container_width=True)
+
+    k1, k2, k3, k4 = st.columns(4)
+    for col, label, value in [
+        (k1, "Detection", "Crack detected" if cv["detected"] else "Not clear"),
+        (k2, "Confidence", f'{result["confidence"]}%'),
+        (k3, "Length", result["length_text"]),
+        (k4, "Avg. width", result["width_text"]),
+    ]:
+        with col:
+            st.markdown(
+                f'<div class="kpi"><div class="label">{label}</div><div class="value">{value}</div></div>',
+                unsafe_allow_html=True,
             )
 
-        st.markdown("### Risk Assessment")
-        render_html(
-            f"""
-            <div class="risk-box">
-                <b>Risk level:</b> {esc(risk_result.get('risk_level'))}<br/>
-                <b>Risk score:</b> {esc(risk_result.get('risk_score'))}/100<br/><br/>
-                <b>Explanation:</b> {esc(risk_result.get('explanation'))}
-            </div>
-            """
-        )
+    st.markdown("### Detection details")
+    d1, d2, d3 = st.columns(3)
+    d1.metric("Crack type", result["crack_type"])
+    d2.metric("Start point", f'X {result["start"][0]} / Y {result["start"][1]}')
+    d3.metric("End point", f'X {result["end"][0]} / Y {result["end"][1]}')
 
-        if risk_result.get("recommendations"):
-            st.markdown("### Recommended Actions")
-            for recommendation in risk_result["recommendations"]:
-                st.write(f"• {recommendation}")
+    st.caption(
+        "DEMO / AI-ASSISTED VISUAL SCREENING — measurements are estimates unless a reliable image scale is supplied."
+    )
 
-        if ai_result.get("recommendation"):
-            st.info(ai_result["recommendation"])
-
-        st.markdown("### Export / Save")
-        pdf_bytes = make_pdf(inputs, image, cv_result, ai_result, risk_result)
-        c1, c2 = st.columns(2)
-        with c1:
-            st.download_button(
-                "📄 Download PDF Report",
-                data=pdf_bytes,
-                file_name=f"structure_doctor_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-            )
-        with c2:
-            if st.button("💾 Save Inspection to History", use_container_width=True):
-                save_inspection(inputs, ai_result, risk_result, cv_result)
-                st.success("Inspection saved to SQLite history.")
-
+    st.markdown("---")
+    st.markdown("## 05 — Classification, severity & possible causes")
+    s1, s2 = st.columns([1, 2])
+    with s1:
         st.markdown(
-            '<div class="notice"><b>Safety notice:</b> Applied-load input is contextual information only. Entering a load value does not establish that the structure can safely carry that load.</div>',
+            f'<div class="kpi"><div class="label">Preliminary severity</div><div class="value">{result["severity"]}</div></div>',
+            unsafe_allow_html=True,
+        )
+    with s2:
+        st.markdown("**Possible explanations — not confirmed from image alone**")
+        for cause in result["possible_causes"]:
+            st.write("• " + cause)
+
+    st.markdown("---")
+    st.markdown("## 06 — Recommendation & possible remedy")
+
+    if recommendation["level"] == "CRITICAL":
+        box_class = "danger"
+    elif recommendation["level"] == "HIGH":
+        box_class = "warning"
+    elif recommendation["level"] == "MODERATE":
+        box_class = "warning"
+    else:
+        box_class = "good"
+
+    st.markdown(
+        f'<div class="{box_class}"><b>{recommendation["headline"]}</b><br>{recommendation["next_step"]}</div>',
+        unsafe_allow_html=True,
+    )
+
+    r1, r2 = st.columns(2)
+    with r1:
+        st.markdown("### What you can do now")
+        for item in recommendation["safe_actions"]:
+            st.write("✓ " + item)
+    with r2:
+        st.markdown("### Possible maintenance / remedy")
+        st.write(recommendation["remedy"])
+
+    st.markdown("### Why this recommendation?")
+    st.write(recommendation["why"])
+
+    if recommendation["inspection_required"]:
+        st.markdown(
+            '<div class="warning"><b>Professional inspection recommended:</b> '
+            "The app does not prescribe a structural repair solely from an image.</div>",
             unsafe_allow_html=True,
         )
 
+    if recommendation["safety_override"]:
+        st.markdown(
+            '<div class="danger"><b>Safety override:</b> Keep people away from any visibly unsafe area and seek urgent qualified professional assessment. '
+            "If there is immediate danger of collapse, follow local emergency procedures.</div>",
+            unsafe_allow_html=True,
+        )
 
-# -----------------------------
-# TRACK CHANGE
-# -----------------------------
-elif page == "Track Change":
-    render_html('<div class="main-title">Track Change</div><div class="subtitle">Compare two inspection images using the same image-processing workflow.</div>')
-    before_file = st.file_uploader("Before image", type=["jpg", "jpeg", "png", "webp"], key="before")
-    after_file = st.file_uploader("After image", type=["jpg", "jpeg", "png", "webp"], key="after")
+    st.markdown("---")
+    st.markdown("## 07 — Final report")
+    pdf = make_pdf(result, info, recommendation)
+    st.download_button(
+        "📄 Download preliminary PDF report",
+        data=pdf,
+        file_name=f"structure_doctor_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+    )
+
+    if st.button("💾 Save inspection to history", use_container_width=True):
+        save_inspection(result, info)
+        st.success("Inspection saved to local SQLite history.")
+
+
+def track_page():
+    st.title("📈 Track Crack Change")
+    st.caption("Compare two images taken at different times. Consistent angle, scale and lighting improve comparison.")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        before_file = st.file_uploader("BEFORE image", type=["jpg", "jpeg", "png"], key="before")
+    with c2:
+        after_file = st.file_uploader("AFTER image", type=["jpg", "jpeg", "png"], key="after")
 
     if before_file and after_file:
-        before = Image.open(before_file).convert("RGB")
-        after = Image.open(after_file).convert("RGB")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.image(before, caption="Before", use_container_width=True)
-        with c2:
-            st.image(after, caption="After", use_container_width=True)
+        before = cv_analyze(before_file)
+        after = cv_analyze(after_file)
 
-        before_cv = cv_analyze(before)
-        after_cv = cv_analyze(after)
-        before_len = before_cv.get("length_px", 0)
-        after_len = after_cv.get("length_px", 0)
-        change = after_len - before_len
+        b1, b2 = st.columns(2)
+        with b1:
+            st.markdown("**BEFORE**")
+            st.image(before["overlay"], use_container_width=True)
+        with b2:
+            st.markdown("**AFTER**")
+            st.image(after["overlay"], use_container_width=True)
 
-        m1, m2, m3 = st.columns(3)
-        with m1:
-            render_html(f'<div class="metric-card"><div class="metric-label">Before feature length</div><div class="metric-value">{esc(before_cv.get("length_text"))}</div></div>')
-        with m2:
-            render_html(f'<div class="metric-card"><div class="metric-label">After feature length</div><div class="metric-value">{esc(after_cv.get("length_text"))}</div></div>')
-        with m3:
-            render_html(f'<div class="metric-card"><div class="metric-label">Pixel change proxy</div><div class="metric-value">{change:+.0f} px</div></div>')
+        # Pixel-space comparison is deliberately labeled as such.
+        length_change = after["length_px"] - before["length_px"]
+        width_change = after["width_px"] - before["width_px"]
 
-        st.warning("Track Change is an image-based comparison. Different camera angle, distance, lighting, cropping, or perspective can change the measured proxy even when the physical condition has not changed.")
+        st.markdown("### Visible change estimate")
+        k1, k2, k3 = st.columns(3)
+        k1.metric("Before length", f'{before["length_px"]:.0f} px')
+        k2.metric("After length", f'{after["length_px"]:.0f} px', f'{length_change:+.0f} px')
+        k3.metric("After width proxy", f'{after["width_px"]:.1f} px', f'{width_change:+.1f} px')
+
+        if length_change > max(8, before["length_px"] * 0.15) or width_change > max(2, before["width_px"] * 0.20):
+            st.warning(
+                "The prototype detects a potentially meaningful visible change between the images. "
+                "Use consistent scale/positioning and consider professional assessment if the crack is progressing."
+            )
+        else:
+            st.success(
+                "No large visible change was detected by this simple comparison. "
+                "Continue monitoring; this does not prove structural stability."
+            )
+
+        st.info(
+            "Tracking is a visual comparison feature, not a validated crack-growth measurement system. "
+            "For accurate real-world dimensions, images need a reliable scale/reference and consistent capture conditions."
+        )
 
 
-# -----------------------------
-# HISTORY
-# -----------------------------
-elif page == "Inspection History":
-    render_html('<div class="main-title">Inspection History</div><div class="subtitle">Saved inspections from the local SQLite database.</div>')
-    conn = sqlite3.connect(DB_PATH)
-    rows = conn.execute(
+def history_page():
+    st.title("🗂️ Inspection History")
+    st.caption("Local SQLite records from this Streamlit prototype.")
+
+    con = sqlite3.connect(DB_PATH)
+    rows = con.execute(
         """
-        SELECT id, timestamp, structure_type, element, material, risk_score,
-               risk_level, severity, crack_length, crack_width, cause, urgency
-        FROM inspections ORDER BY id DESC
+        SELECT created_at, building_type, element, severity, confidence,
+               length_text, width_text, recommendation
+        FROM inspections
+        ORDER BY id DESC
         """
     ).fetchall()
-    conn.close()
+    con.close()
 
     if not rows:
-        st.info("No saved inspections yet. Run an analysis and choose Save Inspection to History.")
-    else:
-        import pandas as pd
-        df = pd.DataFrame(rows, columns=[
-            "ID", "Timestamp", "Structure", "Element", "Material", "Risk Score",
-            "Risk Level", "Severity", "Length", "Width", "Cause", "Urgency"
-        ])
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.info("No saved inspections yet.")
+        return
+
+    for row in rows:
+        with st.expander(f"{row[0]} — {row[3]} — {row[2]}"):
+            st.write(f"**Building:** {row[1]}")
+            st.write(f"**Confidence:** {row[4]}%")
+            st.write(f"**Estimated length:** {row[5]}")
+            st.write(f"**Estimated width:** {row[6]}")
+            st.write(f"**Next step:** {row[7]}")
+
+
+if page == "Home":
+    home()
+elif page == "Analyze":
+    analyze_page()
+elif page == "Track Change":
+    track_page()
+else:
+    history_page()
+
+st.markdown("---")
+st.caption(
+    "Structure Doctor provides preliminary visual assessment only. "
+    "It does not replace professional structural inspection, engineering diagnosis, design or certification."
+)
