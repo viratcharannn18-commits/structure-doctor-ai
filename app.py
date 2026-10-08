@@ -52,21 +52,69 @@ st.set_page_config(
 )
 
 # -----------------------------
-# PROFESSIONAL UI
 # -----------------------------
+# EXISTING DARK-FIELD UI
+# -----------------------------
+# Keep the original light page background and dark input controls.
+# Functionality changes do not alter the visual theme.
 st.markdown(
     """
     <style>
     .stApp { background: #f8fafc; }
-    [data-testid="stSidebar"] { background: #0f172a; }
-    [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
-    .main-title { font-size: 2.25rem; font-weight: 800; color: #0f172a; margin-bottom: 0.1rem; }
-    .subtitle { color: #64748b; font-size: 1rem; margin-bottom: 1.3rem; }
+    .main-title { font-size: 2.25rem; font-weight: 800; color: #334155; margin-bottom: 0.1rem; }
+    .subtitle { color: #52759f; font-size: 1rem; margin-bottom: 1.3rem; }
+
+    /* Keep form controls like the user's existing screen */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"],
+    div[data-baseweb="textarea"] {
+        background-color: #27272f !important;
+        border-color: #27272f !important;
+        color: #ffffff !important;
+        border-radius: 9px !important;
+    }
+    div[data-baseweb="select"] *,
+    div[data-baseweb="input"] *,
+    div[data-baseweb="textarea"] * {
+        color: #ffffff !important;
+    }
+    div[data-baseweb="input"] input,
+    div[data-baseweb="textarea"] textarea {
+        background: #27272f !important;
+        color: #ffffff !important;
+    }
+    div[data-baseweb="input"] input::placeholder,
+    div[data-baseweb="textarea"] textarea::placeholder {
+        color: #aeb3c2 !important;
+        opacity: 1 !important;
+    }
+    div[data-baseweb="select"] svg { fill: #ffffff !important; }
+    [data-testid="stNumberInput"] button {
+        background: #27272f !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+    [data-testid="stNumberInput"] button:hover { background: #30303a !important; }
+    [data-testid="stFileUploader"] section {
+        background: #27272f !important;
+        border-color: #27272f !important;
+    }
+    [data-testid="stFileUploader"] section * { color: #ffffff !important; }
+
+    /* Dropdown menu */
+    [data-baseweb="popover"] [role="option"] {
+        background: #27272f !important;
+        color: #ffffff !important;
+    }
+    [data-baseweb="popover"] [role="option"]:hover {
+        background: #353540 !important;
+    }
+
     .card {
         background: white; border: 1px solid #e2e8f0; border-radius: 14px;
         padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(15,23,42,.04);
     }
-    .section-title { color: #0f172a; font-size: 1.15rem; font-weight: 750; margin-bottom: 8px; }
+    .section-title { color: #334155; font-size: 1.15rem; font-weight: 750; margin-bottom: 8px; }
     .muted { color: #64748b; font-size: .9rem; }
     .metric-card {
         background: white; border: 1px solid #e2e8f0; border-radius: 14px;
@@ -83,6 +131,32 @@ st.markdown(
     .success-note {
         background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;
         padding: 14px; color: #166534;
+    }
+
+    /* Keep all normal text visible on the light page background.
+       These rules do NOT change the dark form-control theme above. */
+    .stApp, .stApp p, .stApp span, .stApp label,
+    .stApp .stMarkdown, .stApp .stCaption,
+    .stApp [data-testid="stMarkdownContainer"] {
+        color: #334155;
+    }
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4,
+    .stApp h5, .stApp h6 {
+        color: #334155 !important;
+    }
+    .stApp [data-testid="stWidgetLabel"] p,
+    .stApp [data-testid="stWidgetLabel"] label,
+    .stApp [data-testid="stCheckbox"] label,
+    .stApp [data-testid="stRadio"] label,
+    .stApp [data-testid="stFileUploaderDropzoneInstructions"] {
+        color: #334155 !important;
+    }
+    .stApp [data-testid="stCaptionContainer"],
+    .stApp [data-testid="stCaptionContainer"] * {
+        color: #64748b !important;
+    }
+    .stApp .stAlert, .stApp .stAlert * {
+        color: inherit;
     }
     div.stButton > button {
         border-radius: 9px; font-weight: 700; border: 1px solid #cbd5e1;
