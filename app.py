@@ -55,17 +55,34 @@ html, body, [class*="css"] {
 }
 
 /* Hide default chrome */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
+#MainMenu {
+    visibility: hidden;
+}
 
-/* Hero */
+footer {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
 .hero {
-    background: linear-gradient(135deg, #123B4A 0%, #1F6175 55%, #2F6F8F 100%);
+    background: linear-gradient(
+        135deg,
+        #123B4A 0%,
+        #1F6175 55%,
+        #2F6F8F 100%
+    );
     border-radius: 22px;
     padding: 42px 46px;
     margin-bottom: 24px;
-    box-shadow: 0 14px 35px rgba(18,59,74,.16);
+    box-shadow: 0 14px 35px rgba(18, 59, 74, .16);
     color: white;
 }
 
@@ -97,20 +114,24 @@ header {visibility: hidden;}
     display: inline-block;
     margin-top: 22px;
     padding: 8px 13px;
-    border: 1px solid rgba(255,255,255,.28);
+    border: 1px solid rgba(255, 255, 255, .28);
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
 }
 
-/* Section headers */
+
+/* =========================================================
+   SECTION HEADERS
+   ========================================================= */
+
 .section {
     background: white;
     border: 1px solid #D9E2E8;
     border-radius: 18px;
     padding: 26px 28px;
     margin: 18px 0;
-    box-shadow: 0 7px 22px rgba(31,41,51,.055);
+    box-shadow: 0 7px 22px rgba(31, 41, 51, .055);
 }
 
 .section-title {
@@ -126,7 +147,111 @@ header {visibility: hidden;}
     margin-bottom: 18px;
 }
 
-/* Step cards */
+
+/* =========================================================
+   STREAMLIT WIDGET LABELS
+   FIX FOR INVISIBLE / WHITE LABEL TEXT
+   ========================================================= */
+
+/* Main Streamlit widget label container */
+[data-testid="stWidgetLabel"] {
+    color: #123B4A !important;
+    opacity: 1 !important;
+}
+
+/* Text inside widget labels */
+[data-testid="stWidgetLabel"] p {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Selectbox labels */
+.stSelectbox label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Number input labels */
+.stNumberInput label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Text input labels */
+.stTextInput label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Text area labels */
+.stTextArea label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* File uploader labels */
+.stFileUploader label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Slider labels */
+.stSlider label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Radio labels outside sidebar */
+.stRadio label {
+    color: #123B4A !important;
+    font-weight: 600 !important;
+    opacity: 1 !important;
+}
+
+/* Widget help / optional text */
+[data-testid="stWidgetLabel"] small {
+    color: #64748B !important;
+    opacity: 1 !important;
+}
+
+/* Input description text */
+[data-testid="InputInstructions"] {
+    color: #64748B !important;
+}
+
+
+/* =========================================================
+   INPUT CONTROLS
+   ========================================================= */
+
+.stSelectbox > div > div {
+    border-radius: 10px;
+}
+
+.stNumberInput > div > div {
+    border-radius: 10px;
+}
+
+.stTextInput > div > div {
+    border-radius: 10px;
+}
+
+.stTextArea > div > div {
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   STEP CARDS
+   ========================================================= */
+
 .step-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -167,7 +292,11 @@ header {visibility: hidden;}
     margin-top: 5px;
 }
 
-/* KPI */
+
+/* =========================================================
+   KPI
+   ========================================================= */
+
 .kpi-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -194,7 +323,11 @@ header {visibility: hidden;}
     margin-top: 5px;
 }
 
-/* Result cards */
+
+/* =========================================================
+   RESULT CARDS
+   ========================================================= */
+
 .result-card {
     background: #FFFFFF;
     border: 1px solid #D9E2E8;
@@ -210,7 +343,15 @@ header {visibility: hidden;}
     margin-bottom: 10px;
 }
 
-.callout, .warning, .danger, .good {
+
+/* =========================================================
+   CALLOUTS
+   ========================================================= */
+
+.callout,
+.warning,
+.danger,
+.good {
     border-radius: 14px;
     padding: 17px;
     margin: 12px 0;
@@ -243,23 +384,54 @@ header {visibility: hidden;}
     color: #1F2933 !important;
 }
 
+
+/* =========================================================
+   HERO TEXT OVERRIDE
+   ========================================================= */
+
 .hero,
 .hero * {
     color: #FFFFFF !important;
 }
 
-section[data-testid="stSidebar"],
-section[data-testid="stSidebar"] * {
-    color: #FFFFFF !important;
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+section[data-testid="stSidebar"] {
+    background: #123B4A;
 }
+
+section[data-testid="stSidebar"] * {
+    color: white !important;
+}
+
+section[data-testid="stSidebar"] .stRadio label {
+    color: white !important;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
 
 .stButton > button {
     color: #1F2933 !important;
+    border-radius: 10px;
+    border: 1px solid #2F6F8F;
+    font-weight: 700;
 }
 
 .stButton > button p {
     color: #1F2933 !important;
 }
+
+
+/* =========================================================
+   METRICS
+   ========================================================= */
 
 [data-testid="stMetricLabel"] {
     color: #64748B !important;
@@ -269,43 +441,37 @@ section[data-testid="stSidebar"] * {
     color: #1F2933 !important;
 }
 
+
+/* =========================================================
+   CAPTIONS
+   ========================================================= */
+
 .stCaption,
 [data-testid="stCaptionContainer"] {
     color: #64748B !important;
 }
-/* Pills */
+
+
+/* =========================================================
+   PILLS
+   ========================================================= */
+
 .pill {
     display: inline-block;
     padding: 6px 10px;
     border-radius: 999px;
     background: #EAF4F8;
-    color: #1F6175;
+    color: #1F6175 !important;
     font-size: 11px;
     font-weight: 700;
     margin-right: 6px;
 }
 
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background: #123B4A;
-}
 
-section[data-testid="stSidebar"] * {
-    color: white;
-}
+/* =========================================================
+   FOOTER
+   ========================================================= */
 
-section[data-testid="stSidebar"] .stRadio label {
-    font-weight: 600;
-}
-
-/* Buttons */
-.stButton > button {
-    border-radius: 10px;
-    border: 1px solid #2F6F8F;
-    font-weight: 700;
-}
-
-/* Footer */
 .footer {
     text-align: center;
     color: #718096;
@@ -313,18 +479,25 @@ section[data-testid="stSidebar"] .stRadio label {
     padding: 28px 10px 10px;
 }
 
-/* Responsive */
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
 @media (max-width: 850px) {
-    .step-row, .kpi-row {
+    .step-row,
+    .kpi-row {
         grid-template-columns: repeat(2, 1fr);
     }
+
     .hero-title {
         font-size: 32px;
     }
 }
 
 @media (max-width: 560px) {
-    .step-row, .kpi-row {
+    .step-row,
+    .kpi-row {
         grid-template-columns: 1fr;
     }
 }
@@ -339,6 +512,7 @@ section[data-testid="stSidebar"] .stRadio label {
 # -----------------------------
 def init_db():
     conn = sqlite3.connect(DB_PATH)
+
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS inspections (
@@ -358,17 +532,38 @@ def init_db():
         )
         """
     )
+
     conn.commit()
     conn.close()
 
 
-def save_inspection(info, result, confidence, length_text, width_text, recommendation):
+def save_inspection(
+    info,
+    result,
+    confidence,
+    length_text,
+    width_text,
+    recommendation,
+):
     conn = sqlite3.connect(DB_PATH)
+
     conn.execute(
         """
         INSERT INTO inspections
-        (timestamp, building_type, element, age, material, crack_type,
-         severity, score, confidence, length_value, width_value, recommendation)
+        (
+            timestamp,
+            building_type,
+            element,
+            age,
+            material,
+            crack_type,
+            severity,
+            score,
+            confidence,
+            length_value,
+            width_value,
+            recommendation
+        )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
@@ -386,6 +581,7 @@ def save_inspection(info, result, confidence, length_text, width_text, recommend
             recommendation,
         ),
     )
+
     conn.commit()
     conn.close()
 
@@ -404,55 +600,105 @@ def cv_analyze(image: Image.Image):
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # Dark linear features
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 17))
-    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, kernel)
+    kernel = cv2.getStructuringElement(
+        cv2.MORPH_RECT,
+        (17, 17),
+    )
+
+    blackhat = cv2.morphologyEx(
+        gray,
+        cv2.MORPH_BLACKHAT,
+        kernel,
+    )
 
     _, mask = cv2.threshold(
-        blackhat, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        blackhat,
+        0,
+        255,
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU,
     )
 
     # Edge information
-    edges = cv2.Canny(gray, 50, 150)
-    combined = cv2.bitwise_or(mask, edges)
+    edges = cv2.Canny(
+        gray,
+        50,
+        150,
+    )
+
+    combined = cv2.bitwise_or(
+        mask,
+        edges,
+    )
 
     combined = cv2.morphologyEx(
         combined,
         cv2.MORPH_CLOSE,
-        cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)),
+        cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (5, 5),
+        ),
         iterations=1,
     )
 
     combined = cv2.morphologyEx(
         combined,
         cv2.MORPH_OPEN,
-        cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)),
+        cv2.getStructuringElement(
+            cv2.MORPH_RECT,
+            (3, 3),
+        ),
         iterations=1,
     )
 
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
-        combined, 8
+    num_labels, labels, stats, centroids = (
+        cv2.connectedComponentsWithStats(
+            combined,
+            8,
+        )
     )
 
     h, w = gray.shape
-    image_area = max(h * w, 1)
+    image_area = max(
+        h * w,
+        1,
+    )
 
     candidates = []
 
     for i in range(1, num_labels):
         x, y, bw, bh, area = stats[i]
 
-        if area < max(20, image_area * 0.00005):
+        if area < max(
+            20,
+            image_area * 0.00005,
+        ):
             continue
 
         # Ignore huge background regions.
         if area > image_area * 0.35:
             continue
 
-        aspect = max(bw, bh) / max(min(bw, bh), 1)
+        aspect = max(
+            bw,
+            bh,
+        ) / max(
+            min(bw, bh),
+            1,
+        )
+
         if aspect < 2.0:
             continue
 
-        candidates.append((area, x, y, bw, bh, aspect))
+        candidates.append(
+            (
+                area,
+                x,
+                y,
+                bw,
+                bh,
+                aspect,
+            )
+        )
 
     if not candidates:
         return {
@@ -462,36 +708,72 @@ def cv_analyze(image: Image.Image):
             "width_px": 0.0,
             "area_px": 0.0,
             "overlay": image.convert("RGB"),
-            "mask": Image.fromarray(np.zeros_like(gray)),
+            "mask": Image.fromarray(
+                np.zeros_like(gray)
+            ),
             "yolo_used": False,
             "yolo_confidence": 0.0,
         }
 
     # Favor long, relatively thin regions.
     candidates.sort(
-        key=lambda item: item[5] * np.sqrt(max(item[0], 1)),
+        key=lambda item:
+            item[5] *
+            np.sqrt(
+                max(
+                    item[0],
+                    1,
+                )
+            ),
         reverse=True,
     )
 
     area, x, y, bw, bh, aspect = candidates[0]
 
-    length_px = float(max(bw, bh))
-    width_px = float(max(1.0, min(bw, bh) * 0.18))
+    length_px = float(
+        max(
+            bw,
+            bh,
+        )
+    )
+
+    width_px = float(
+        max(
+            1.0,
+            min(
+                bw,
+                bh,
+            ) * 0.18,
+        )
+    )
 
     # Keep a reasonable visual estimate.
-    width_px = min(width_px, max(length_px * 0.25, 1.0))
+    width_px = min(
+        width_px,
+        max(
+            length_px * 0.25,
+            1.0,
+        ),
+    )
 
     confidence = min(
         98.0,
         max(
             55.0,
             55.0
-            + min(aspect / 12.0, 1.0) * 25.0
-            + min(area / (image_area * 0.03), 1.0) * 18.0,
+            + min(
+                aspect / 12.0,
+                1.0,
+            ) * 25.0
+            + min(
+                area / (image_area * 0.03),
+                1.0,
+            ) * 18.0,
         ),
     )
 
     overlay = rgb.copy()
+
     cv2.rectangle(
         overlay,
         (x, y),
@@ -512,7 +794,14 @@ def cv_analyze(image: Image.Image):
     )
 
     roi_mask = np.zeros_like(gray)
-    roi_mask[y:y + bh, x:x + bw] = combined[y:y + bh, x:x + bw]
+
+    roi_mask[
+        y:y + bh,
+        x:x + bw
+    ] = combined[
+        y:y + bh,
+        x:x + bw
+    ]
 
     return {
         "detected": True,
@@ -530,27 +819,45 @@ def cv_analyze(image: Image.Image):
 def format_measurement(value, scale):
     if scale and scale > 0:
         return f"{value * scale:.2f} mm"
+
     return f"{value:.0f} px"
 
 
 def classify_crack(cv_result):
-    length = cv_result.get("length_px", 0)
-    width = cv_result.get("width_px", 0)
+    length = cv_result.get(
+        "length_px",
+        0,
+    )
+
+    width = cv_result.get(
+        "width_px",
+        0,
+    )
 
     if length <= 0:
         return "Auto / unknown"
 
-    # Approximate visual classification from dominant bounding-box dimensions.
-    # This is intentionally framed as a preliminary visual classification.
+    # Approximate visual classification from
+    # dominant bounding-box dimensions.
+    # This is intentionally framed as
+    # a preliminary visual classification.
     if length > width * 7:
         return "Vertical / Horizontal"
+
     return "Random / irregular"
 
 
 # -----------------------------
 # PDF
 # -----------------------------
-def make_pdf(info, result, recommendation, confidence, length_text, width_text):
+def make_pdf(
+    info,
+    result,
+    recommendation,
+    confidence,
+    length_text,
+    width_text,
+):
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
@@ -563,6 +870,7 @@ def make_pdf(info, result, recommendation, confidence, length_text, width_text):
     )
 
     styles = getSampleStyleSheet()
+
     title = ParagraphStyle(
         "Title2",
         parent=styles["Title"],
@@ -580,82 +888,277 @@ def make_pdf(info, result, recommendation, confidence, length_text, width_text):
     )
 
     story = [
-        Paragraph("STRUCTURE DOCTOR AI", title),
-        Spacer(1, 7 * mm),
-        Paragraph("AI-Assisted Crack Detection & Preliminary Structural Assessment", body),
-        Spacer(1, 5 * mm),
         Paragraph(
-            "This report is a preliminary image-based screening result and is not a structural safety certificate.",
+            "STRUCTURE DOCTOR AI",
+            title,
+        ),
+        Spacer(
+            1,
+            7 * mm,
+        ),
+        Paragraph(
+            "AI-Assisted Crack Detection & Preliminary Structural Assessment",
             body,
         ),
-        Spacer(1, 8 * mm),
+        Spacer(
+            1,
+            5 * mm,
+        ),
+        Paragraph(
+            "This report is a preliminary image-based screening result "
+            "and is not a structural safety certificate.",
+            body,
+        ),
+        Spacer(
+            1,
+            8 * mm,
+        ),
     ]
 
     data = [
-        ["Inspection", datetime.now().strftime("%d %b %Y, %H:%M")],
-        ["Building type", str(info.get("building_type", ""))],
-        ["Structural element", str(info.get("element", ""))],
-        ["Building age", str(info.get("age", ""))],
-        ["Material", str(info.get("material", ""))],
-        ["Crack type", str(info.get("crack_type", ""))],
-        ["Preliminary severity", result.get("severity", "")],
-        ["Screening score", str(result.get("score", 0))],
-        ["Confidence", f"{confidence:.0f}%"],
-        ["Estimated length", length_text],
-        ["Estimated width", width_text],
+        [
+            "Inspection",
+            datetime.now().strftime(
+                "%d %b %Y, %H:%M"
+            ),
+        ],
+        [
+            "Building type",
+            str(
+                info.get(
+                    "building_type",
+                    "",
+                )
+            ),
+        ],
+        [
+            "Structural element",
+            str(
+                info.get(
+                    "element",
+                    "",
+                )
+            ),
+        ],
+        [
+            "Building age",
+            str(
+                info.get(
+                    "age",
+                    "",
+                )
+            ),
+        ],
+        [
+            "Material",
+            str(
+                info.get(
+                    "material",
+                    "",
+                )
+            ),
+        ],
+        [
+            "Crack type",
+            str(
+                info.get(
+                    "crack_type",
+                    "",
+                )
+            ),
+        ],
+        [
+            "Preliminary severity",
+            result.get(
+                "severity",
+                "",
+            ),
+        ],
+        [
+            "Screening score",
+            str(
+                result.get(
+                    "score",
+                    0,
+                )
+            ),
+        ],
+        [
+            "Confidence",
+            f"{confidence:.0f}%",
+        ],
+        [
+            "Estimated length",
+            length_text,
+        ],
+        [
+            "Estimated width",
+            width_text,
+        ],
     ]
 
-    table = Table(data, colWidths=[55 * mm, 115 * mm])
+    table = Table(
+        data,
+        colWidths=[
+            55 * mm,
+            115 * mm,
+        ],
+    )
+
     table.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#EAF4F8")),
-                ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#1F2933")),
-                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D9E2E8")),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("PADDING", (0, 0), (-1, -1), 7),
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (0, -1),
+                    colors.HexColor("#EAF4F8"),
+                ),
+                (
+                    "TEXTCOLOR",
+                    (0, 0),
+                    (-1, -1),
+                    colors.HexColor("#1F2933"),
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, -1),
+                    "Helvetica",
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (0, -1),
+                    "Helvetica-Bold",
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.4,
+                    colors.HexColor("#D9E2E8"),
+                ),
+                (
+                    "VALIGN",
+                    (0, 0),
+                    (-1, -1),
+                    "TOP",
+                ),
+                (
+                    "PADDING",
+                    (0, 0),
+                    (-1, -1),
+                    7,
+                ),
             ]
         )
     )
 
     story.append(table)
-    story.append(Spacer(1, 7 * mm))
 
-    story.append(Paragraph("<b>What was observed</b>", body))
+    story.append(
+        Spacer(
+            1,
+            7 * mm,
+        )
+    )
+
+    story.append(
+        Paragraph(
+            "<b>What was observed</b>",
+            body,
+        )
+    )
+
     story.append(
         Paragraph(
             result.get(
                 "visual_evidence",
-                "A crack-like visual region was identified for preliminary review.",
+                "A crack-like visual region was identified "
+                "for preliminary review.",
             ),
             body,
         )
     )
-    story.append(Spacer(1, 4 * mm))
 
-    story.append(Paragraph("<b>Possible explanations</b>", body))
-    for cause in result.get("possible_causes", []):
-        story.append(Paragraph(f"• {cause}", body))
+    story.append(
+        Spacer(
+            1,
+            4 * mm,
+        )
+    )
 
-    story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph("<b>Recommended next step</b>", body))
-    story.append(Paragraph(recommendation.get("next_step", ""), body))
-
-    story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph("<b>Safety note</b>", body))
     story.append(
         Paragraph(
-            "The system does not determine actual structural strength, remaining load capacity, "
-            "reinforcement condition, or final structural cause. A qualified structural professional "
-            "should assess significant or uncertain damage.",
+            "<b>Possible explanations</b>",
+            body,
+        )
+    )
+
+    for cause in result.get(
+        "possible_causes",
+        [],
+    ):
+        story.append(
+            Paragraph(
+                f"• {cause}",
+                body,
+            )
+        )
+
+    story.append(
+        Spacer(
+            1,
+            4 * mm,
+        )
+    )
+
+    story.append(
+        Paragraph(
+            "<b>Recommended next step</b>",
+            body,
+        )
+    )
+
+    story.append(
+        Paragraph(
+            recommendation.get(
+                "next_step",
+                "",
+            ),
+            body,
+        )
+    )
+
+    story.append(
+        Spacer(
+            1,
+            4 * mm,
+        )
+    )
+
+    story.append(
+        Paragraph(
+            "<b>Safety note</b>",
+            body,
+        )
+    )
+
+    story.append(
+        Paragraph(
+            "The system does not determine actual structural strength, "
+            "remaining load capacity, reinforcement condition, or final "
+            "structural cause. A qualified structural professional should "
+            "assess significant or uncertain damage.",
             body,
         )
     )
 
     doc.build(story)
+
     buffer.seek(0)
+
     return buffer.getvalue()
 
 
@@ -677,7 +1180,9 @@ with st.sidebar:
     )
 
     st.markdown("---")
+
     st.markdown("### System")
+
     st.markdown(
         '<span class="pill">OpenCV</span>'
         '<span class="pill">Python</span>'
@@ -690,17 +1195,27 @@ with st.sidebar:
 # Home
 # -----------------------------
 if page == "Home":
+
     st.markdown(
         """
         <div class="hero">
-            <div class="hero-kicker">AI-Assisted Structural Screening</div>
-            <div class="hero-title">STRUCTURE<br>DOCTOR AI</div>
+            <div class="hero-kicker">
+                AI-Assisted Structural Screening
+            </div>
+
+            <div class="hero-title">
+                STRUCTURE<br>DOCTOR AI
+            </div>
+
             <div class="hero-subtitle">
                 A visual screening prototype that analyzes uploaded crack images,
                 extracts measurable image features, combines them with structural
                 context, and produces an explainable preliminary assessment.
             </div>
-            <div class="hero-badge">HACKATHON PROTOTYPE • NOT A SAFETY CERTIFICATION</div>
+
+            <div class="hero-badge">
+                HACKATHON PROTOTYPE • NOT A SAFETY CERTIFICATION
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -709,31 +1224,53 @@ if page == "Home":
     st.markdown(
         """
         <div class="section">
-            <div class="section-title">How the system works</div>
-            <div class="section-subtitle">
-                A presentation-style pipeline from image input to explainable recommendation.
+            <div class="section-title">
+                How the system works
             </div>
+
+            <div class="section-subtitle">
+                A presentation-style pipeline from image input
+                to explainable recommendation.
+            </div>
+
             <div class="step-row">
+
                 <div class="step-card">
                     <div class="step-number">1</div>
                     <div class="step-title">Input</div>
-                    <div class="step-text">Structural details, visible condition indicators and a crack image.</div>
+                    <div class="step-text">
+                        Structural details, visible condition indicators
+                        and a crack image.
+                    </div>
                 </div>
+
                 <div class="step-card">
                     <div class="step-number">2</div>
                     <div class="step-title">Computer Vision</div>
-                    <div class="step-text">OpenCV identifies crack-like regions and estimates image-based dimensions.</div>
+                    <div class="step-text">
+                        OpenCV identifies crack-like regions and estimates
+                        image-based dimensions.
+                    </div>
                 </div>
+
                 <div class="step-card">
                     <div class="step-number">3</div>
                     <div class="step-title">Risk Engine</div>
-                    <div class="step-text">Explainable rules combine visual evidence with structural context.</div>
+                    <div class="step-text">
+                        Explainable rules combine visual evidence
+                        with structural context.
+                    </div>
                 </div>
+
                 <div class="step-card">
                     <div class="step-number">4</div>
                     <div class="step-title">Recommendation</div>
-                    <div class="step-text">The system provides severity, possible explanations and next steps.</div>
+                    <div class="step-text">
+                        The system provides severity, possible explanations
+                        and next steps.
+                    </div>
                 </div>
+
             </div>
         </div>
         """,
@@ -743,10 +1280,27 @@ if page == "Home":
     st.markdown(
         """
         <div class="kpi-row">
-            <div class="kpi"><div class="label">VISION</div><div class="value">OpenCV</div></div>
-            <div class="kpi"><div class="label">ENGINE</div><div class="value">Explainable</div></div>
-            <div class="kpi"><div class="label">HISTORY</div><div class="value">SQLite</div></div>
-            <div class="kpi"><div class="label">REPORT</div><div class="value">PDF</div></div>
+
+            <div class="kpi">
+                <div class="label">VISION</div>
+                <div class="value">OpenCV</div>
+            </div>
+
+            <div class="kpi">
+                <div class="label">ENGINE</div>
+                <div class="value">Explainable</div>
+            </div>
+
+            <div class="kpi">
+                <div class="label">HISTORY</div>
+                <div class="value">SQLite</div>
+            </div>
+
+            <div class="kpi">
+                <div class="label">REPORT</div>
+                <div class="value">PDF</div>
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -755,15 +1309,25 @@ if page == "Home":
     st.markdown(
         """
         <div class="section">
-            <div class="section-title">Engineering principle</div>
+
+            <div class="section-title">
+                Engineering principle
+            </div>
+
             <div class="section-subtitle">
-                The prototype deliberately separates visual screening from professional structural diagnosis.
+                The prototype deliberately separates visual screening
+                from professional structural diagnosis.
             </div>
+
             <div class="callout">
-                <b>Important:</b> Image pixels are not physical millimetres unless a scale is supplied.
-                The system therefore uses normalized visual features when no physical reference is available.
-                It does not claim to calculate actual structural strength or load-bearing capacity.
+                <b>Important:</b>
+                Image pixels are not physical millimetres unless a scale
+                is supplied. The system therefore uses normalized visual
+                features when no physical reference is available.
+                It does not claim to calculate actual structural strength
+                or load-bearing capacity.
             </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -774,14 +1338,24 @@ if page == "Home":
 # Analyze
 # -----------------------------
 elif page == "Analyze":
+
     st.markdown(
         """
         <div class="hero">
-            <div class="hero-kicker">01 / Inspection</div>
-            <div class="hero-title">Analyze a Structure</div>
-            <div class="hero-subtitle">
-                Enter the structural context first, then upload the image for visual screening.
+
+            <div class="hero-kicker">
+                01 / Inspection
             </div>
+
+            <div class="hero-title">
+                Analyze a Structure
+            </div>
+
+            <div class="hero-subtitle">
+                Enter the structural context first, then upload
+                the image for visual screening.
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -790,8 +1364,16 @@ elif page == "Analyze":
     st.markdown(
         """
         <div class="section">
-            <div class="section-title">Structural information</div>
-            <div class="section-subtitle">These inputs provide engineering context for the screening rules.</div>
+
+            <div class="section-title">
+                Structural information
+            </div>
+
+            <div class="section-subtitle">
+                These inputs provide engineering context for
+                the screening rules.
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -800,17 +1382,37 @@ elif page == "Analyze":
     c1, c2, c3 = st.columns(3)
 
     with c1:
+
         building_type = st.selectbox(
             "Building type",
-            ["Residential", "Commercial", "Industrial", "Institutional", "Other"],
+            [
+                "Residential",
+                "Commercial",
+                "Industrial",
+                "Institutional",
+                "Other",
+            ],
         )
+
         element = st.selectbox(
             "Structural element",
-            ["Wall", "Beam", "Column", "Slab", "Foundation", "Other / unknown"],
+            [
+                "Wall",
+                "Beam",
+                "Column",
+                "Slab",
+                "Foundation",
+                "Other / unknown",
+            ],
         )
 
     with c2:
-        age = st.text_input("Approx. building age", value="10 years")
+
+        age = st.text_input(
+            "Approx. building age",
+            value="10 years",
+        )
+
         material = st.selectbox(
             "Material",
             [
@@ -823,6 +1425,7 @@ elif page == "Analyze":
         )
 
     with c3:
+
         crack_type = st.selectbox(
             "Known / observed crack pattern",
             [
@@ -834,6 +1437,7 @@ elif page == "Analyze":
                 "Map-like",
             ],
         )
+
         scale = st.number_input(
             "Scale (mm per pixel, optional)",
             min_value=0.0,
@@ -846,8 +1450,16 @@ elif page == "Analyze":
     st.markdown(
         """
         <div class="section">
-            <div class="section-title">Condition indicators</div>
-            <div class="section-subtitle">Visible/contextual factors used by the explainable screening engine.</div>
+
+            <div class="section-title">
+                Condition indicators
+            </div>
+
+            <div class="section-subtitle">
+                Visible/contextual factors used by the explainable
+                screening engine.
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -856,22 +1468,71 @@ elif page == "Analyze":
     q1, q2, q3 = st.columns(3)
 
     with q1:
-        seepage = st.selectbox("Water seepage / dampness?", ["No", "Yes"])
-        rust = st.selectbox("Visible rust / reinforcement?", ["No", "Yes"])
+
+        seepage = st.selectbox(
+            "Water seepage / dampness?",
+            [
+                "No",
+                "Yes",
+            ],
+        )
+
+        rust = st.selectbox(
+            "Visible rust / reinforcement?",
+            [
+                "No",
+                "Yes",
+            ],
+        )
 
     with q2:
-        progression = st.selectbox("Crack increasing?", ["No", "Yes"])
-        event = st.selectbox("Recent earthquake / impact / event?", ["No", "Yes"])
+
+        progression = st.selectbox(
+            "Crack increasing?",
+            [
+                "No",
+                "Yes",
+            ],
+        )
+
+        event = st.selectbox(
+            "Recent earthquake / impact / event?",
+            [
+                "No",
+                "Yes",
+            ],
+        )
 
     with q3:
-        deformation = st.selectbox("Visible deformation / displacement?", ["No", "Yes"])
-        sound = st.selectbox("Hollow / loose sound reported?", ["No", "Yes"])
+
+        deformation = st.selectbox(
+            "Visible deformation / displacement?",
+            [
+                "No",
+                "Yes",
+            ],
+        )
+
+        sound = st.selectbox(
+            "Hollow / loose sound reported?",
+            [
+                "No",
+                "Yes",
+            ],
+        )
 
     st.markdown(
         """
         <div class="section">
-            <div class="section-title">Crack image</div>
-            <div class="section-subtitle">Use a clear, focused image with good lighting whenever possible.</div>
+
+            <div class="section-title">
+                Crack image
+            </div>
+
+            <div class="section-subtitle">
+                Use a clear, focused image with good lighting whenever possible.
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -879,29 +1540,65 @@ elif page == "Analyze":
 
     uploaded = st.file_uploader(
         "Upload crack image",
-        type=["jpg", "jpeg", "png"],
+        type=[
+            "jpg",
+            "jpeg",
+            "png",
+        ],
     )
 
     if uploaded:
-        image = Image.open(uploaded).convert("RGB")
+
+        image = Image.open(
+            uploaded
+        ).convert("RGB")
 
         left, right = st.columns(2)
+
         with left:
-            st.image(image, caption="Uploaded image", width="stretch")
+
+            st.image(
+                image,
+                caption="Uploaded image",
+                width="stretch",
+            )
 
         with right:
-            st.markdown("### Image preview")
-            st.write(f"Resolution: **{image.width} × {image.height} px**")
-            st.write("Analysis mode: **OpenCV computer vision**")
-            st.write("Model status: **No external model required**")
 
-        if st.button("🔎 Analyze Image", type="primary", width="stretch"):
-            with st.spinner("Analyzing visible crack-like features..."):
-                cv = cv_analyze(image)
+            st.markdown("### Image preview")
+
+            st.write(
+                f"Resolution: **{image.width} × {image.height} px**"
+            )
+
+            st.write(
+                "Analysis mode: **OpenCV computer vision**"
+            )
+
+            st.write(
+                "Model status: **No external model required**"
+            )
+
+        if st.button(
+            "🔎 Analyze Image",
+            type="primary",
+            width="stretch",
+        ):
+
+            with st.spinner(
+                "Analyzing visible crack-like features..."
+            ):
+
+                cv = cv_analyze(
+                    image
+                )
 
             ctype = crack_type
+
             if crack_type == "Auto / unknown":
-                ctype = classify_crack(cv)
+                ctype = classify_crack(
+                    cv
+                )
 
             info = {
                 "building_type": building_type,
@@ -919,8 +1616,16 @@ elif page == "Analyze":
 
             inputs = {
                 **info,
-                "width_mm": cv["width_px"] * scale if scale > 0 else 0,
-                "length_mm": cv["length_px"] * scale if scale > 0 else 0,
+                "width_mm": (
+                    cv["width_px"] * scale
+                    if scale > 0
+                    else 0
+                ),
+                "length_mm": (
+                    cv["length_px"] * scale
+                    if scale > 0
+                    else 0
+                ),
                 "detected": cv["detected"],
                 "confidence": cv["confidence"],
                 "length_px": cv["length_px"],
@@ -932,11 +1637,24 @@ elif page == "Analyze":
                 "yolo_confidence": 0.0,
             }
 
-            result = assess_risk(inputs)
-            recommendation = build_recommendation(inputs, result)
+            result = assess_risk(
+                inputs
+            )
 
-            length_text = format_measurement(cv["length_px"], scale)
-            width_text = format_measurement(cv["width_px"], scale)
+            recommendation = build_recommendation(
+                inputs,
+                result,
+            )
+
+            length_text = format_measurement(
+                cv["length_px"],
+                scale,
+            )
+
+            width_text = format_measurement(
+                cv["width_px"],
+                scale,
+            )
 
             st.session_state["last_analysis"] = {
                 "info": info,
@@ -948,9 +1666,12 @@ elif page == "Analyze":
                 "width_text": width_text,
             }
 
-    analysis = st.session_state.get("last_analysis")
+    analysis = st.session_state.get(
+        "last_analysis"
+    )
 
     if analysis:
+
         info = analysis["info"]
         cv = analysis["cv"]
         result = analysis["result"]
@@ -961,35 +1682,73 @@ elif page == "Analyze":
         st.markdown(
             """
             <div class="section">
-                <div class="section-title">Analysis result</div>
-                <div class="section-subtitle">Preliminary visual screening output.</div>
+
+                <div class="section-title">
+                    Analysis result
+                </div>
+
+                <div class="section-subtitle">
+                    Preliminary visual screening output.
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        severity = result.get("severity", "Low")
+        severity = result.get(
+            "severity",
+            "Low",
+        )
+
         box_class = (
-            "danger" if severity == "Critical"
-            else "warning" if severity in {"High", "Moderate"}
+            "danger"
+            if severity == "Critical"
+            else "warning"
+            if severity in {
+                "High",
+                "Moderate",
+            }
             else "good"
         )
 
         k1, k2, k3, k4 = st.columns(4)
 
         with k1:
-            st.metric("Severity", severity)
+            st.metric(
+                "Severity",
+                severity,
+            )
+
         with k2:
-            st.metric("Score", result.get("score", 0))
+            st.metric(
+                "Score",
+                result.get(
+                    "score",
+                    0,
+                ),
+            )
+
         with k3:
-            st.metric("Confidence", f'{cv.get("confidence", 0):.0f}%')
+            st.metric(
+                "Confidence",
+                f'{cv.get("confidence", 0):.0f}%',
+            )
+
         with k4:
-            st.metric("Crack type", info.get("crack_type", ""))
+            st.metric(
+                "Crack type",
+                info.get(
+                    "crack_type",
+                    "",
+                ),
+            )
 
         st.markdown(
             f"""
             <div class="{box_class}">
-                <b>{recommendation.get("headline", "")}</b><br><br>
+                <b>{recommendation.get("headline", "")}</b>
+                <br><br>
                 {recommendation.get("why", "")}
             </div>
             """,
@@ -999,6 +1758,7 @@ elif page == "Analyze":
         a, b = st.columns(2)
 
         with a:
+
             st.image(
                 cv["overlay"],
                 caption="Detected visual region",
@@ -1006,64 +1766,122 @@ elif page == "Analyze":
             )
 
         with b:
+
             st.markdown(
                 """
                 <div class="result-card">
-                    <div class="result-title">Measured visual evidence</div>
+
+                    <div class="result-title">
+                        Measured visual evidence
+                    </div>
                 """,
                 unsafe_allow_html=True,
             )
-            st.write(f"**Estimated length:** {length_text}")
-            st.write(f"**Estimated width:** {width_text}")
+
             st.write(
-                f"**Visual extent:** {result.get('visual_evidence', 'Not available')}"
+                f"**Estimated length:** {length_text}"
             )
+
+            st.write(
+                f"**Estimated width:** {width_text}"
+            )
+
+            st.write(
+                f"**Visual extent:** "
+                f"{result.get('visual_evidence', 'Not available')}"
+            )
+
             st.write(
                 "**Detection method:** OpenCV computer vision"
             )
-            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown(
+                "</div>",
+                unsafe_allow_html=True,
+            )
 
         r1, r2 = st.columns(2)
 
         with r1:
+
             st.markdown(
                 """
                 <div class="result-card">
-                    <div class="result-title">Possible explanations</div>
+
+                    <div class="result-title">
+                        Possible explanations
+                    </div>
                 """,
                 unsafe_allow_html=True,
             )
-            for cause in result.get("possible_causes", []):
-                st.markdown(f"• {cause}")
-            st.markdown("</div>", unsafe_allow_html=True)
+
+            for cause in result.get(
+                "possible_causes",
+                [],
+            ):
+                st.markdown(
+                    f"• {cause}"
+                )
+
+            st.markdown(
+                "</div>",
+                unsafe_allow_html=True,
+            )
 
         with r2:
+
             st.markdown(
                 """
                 <div class="result-card">
-                    <div class="result-title">Recommended next step</div>
+
+                    <div class="result-title">
+                        Recommended next step
+                    </div>
                 """,
                 unsafe_allow_html=True,
             )
-            st.write(recommendation.get("next_step", ""))
-            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.write(
+                recommendation.get(
+                    "next_step",
+                    "",
+                )
+            )
+
+            st.markdown(
+                "</div>",
+                unsafe_allow_html=True,
+            )
 
         st.markdown(
             """
             <div class="section">
-                <div class="section-title">Safe actions</div>
-                <div class="section-subtitle">Actions suggested by the screening result.</div>
+
+                <div class="section-title">
+                    Safe actions
+                </div>
+
+                <div class="section-subtitle">
+                    Actions suggested by the screening result.
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        for item in recommendation.get("safe_actions", []):
-            st.markdown(f"✓ {item}")
+        for item in recommendation.get(
+            "safe_actions",
+            [],
+        ):
+            st.markdown(
+                f"✓ {item}"
+            )
 
         st.info(
-            "Important: This prototype does not determine actual structural strength, "
-            "remaining load capacity, reinforcement condition, or final structural cause."
+            "Important: This prototype does not determine actual "
+            "structural strength, remaining load capacity, "
+            "reinforcement condition, or final structural cause."
         )
 
         pdf_bytes = make_pdf(
@@ -1078,6 +1896,7 @@ elif page == "Analyze":
         p1, p2 = st.columns(2)
 
         with p1:
+
             st.download_button(
                 "📄 Download PDF Report",
                 data=pdf_bytes,
@@ -1087,30 +1906,51 @@ elif page == "Analyze":
             )
 
         with p2:
-            if st.button("💾 Save to Inspection History", width="stretch"):
+
+            if st.button(
+                "💾 Save to Inspection History",
+                width="stretch",
+            ):
+
                 save_inspection(
                     info,
                     result,
                     cv["confidence"],
                     length_text,
                     width_text,
-                    recommendation.get("next_step", ""),
+                    recommendation.get(
+                        "next_step",
+                        "",
+                    ),
                 )
-                st.success("Inspection saved successfully.")
+
+                st.success(
+                    "Inspection saved successfully."
+                )
 
 
 # -----------------------------
 # Track change
 # -----------------------------
 elif page == "Track Change":
+
     st.markdown(
         """
         <div class="hero">
-            <div class="hero-kicker">02 / Monitoring</div>
-            <div class="hero-title">Track Change</div>
-            <div class="hero-subtitle">
-                Compare two images using the same visual measurement pipeline.
+
+            <div class="hero-kicker">
+                02 / Monitoring
             </div>
+
+            <div class="hero-title">
+                Track Change
+            </div>
+
+            <div class="hero-subtitle">
+                Compare two images using the same visual
+                measurement pipeline.
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -1118,49 +1958,100 @@ elif page == "Track Change":
 
     before = st.file_uploader(
         "Upload BEFORE image",
-        type=["jpg", "jpeg", "png"],
+        type=[
+            "jpg",
+            "jpeg",
+            "png",
+        ],
         key="before",
     )
 
     after = st.file_uploader(
         "Upload AFTER image",
-        type=["jpg", "jpeg", "png"],
+        type=[
+            "jpg",
+            "jpeg",
+            "png",
+        ],
         key="after",
     )
 
     if before and after:
-        before_img = Image.open(before).convert("RGB")
-        after_img = Image.open(after).convert("RGB")
 
-        bcv = cv_analyze(before_img)
-        acv = cv_analyze(after_img)
+        before_img = Image.open(
+            before
+        ).convert("RGB")
+
+        after_img = Image.open(
+            after
+        ).convert("RGB")
+
+        bcv = cv_analyze(
+            before_img
+        )
+
+        acv = cv_analyze(
+            after_img
+        )
 
         c1, c2 = st.columns(2)
 
         with c1:
-            st.image(before_img, caption="Before", width="stretch")
-            st.metric("Before visible length", f'{bcv["length_px"]:.0f} px')
+
+            st.image(
+                before_img,
+                caption="Before",
+                width="stretch",
+            )
+
+            st.metric(
+                "Before visible length",
+                f'{bcv["length_px"]:.0f} px',
+            )
 
         with c2:
-            st.image(after_img, caption="After", width="stretch")
-            st.metric("After visible length", f'{acv["length_px"]:.0f} px')
 
-        change = acv["length_px"] - bcv["length_px"]
+            st.image(
+                after_img,
+                caption="After",
+                width="stretch",
+            )
+
+            st.metric(
+                "After visible length",
+                f'{acv["length_px"]:.0f} px',
+            )
+
+        change = (
+            acv["length_px"]
+            - bcv["length_px"]
+        )
 
         if change > 0:
+
             st.warning(
-                f"Visible crack-length proxy increased by approximately {change:.0f} px."
+                "Visible crack-length proxy increased "
+                f"by approximately {change:.0f} px."
             )
+
         elif change < 0:
+
             st.success(
-                f"Visible crack-length proxy decreased by approximately {abs(change):.0f} px."
+                "Visible crack-length proxy decreased "
+                f"by approximately {abs(change):.0f} px."
             )
+
         else:
-            st.info("No measurable change in the image-based length proxy.")
+
+            st.info(
+                "No measurable change in the image-based "
+                "length proxy."
+            )
 
         st.caption(
-            "This is an image-based comparison only. Different camera angle, distance, "
-            "lighting and scale can affect the result."
+            "This is an image-based comparison only. "
+            "Different camera angle, distance, lighting "
+            "and scale can affect the result."
         )
 
 
@@ -1168,34 +2059,62 @@ elif page == "Track Change":
 # History
 # -----------------------------
 elif page == "Inspection History":
+
     st.markdown(
         """
         <div class="hero">
-            <div class="hero-kicker">03 / Records</div>
-            <div class="hero-title">Inspection History</div>
-            <div class="hero-subtitle">
-                Review previously saved preliminary screening results.
+
+            <div class="hero-kicker">
+                03 / Records
             </div>
+
+            <div class="hero-title">
+                Inspection History
+            </div>
+
+            <div class="hero-subtitle">
+                Review previously saved preliminary
+                screening results.
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(
+        DB_PATH
+    )
+
     rows = conn.execute(
         """
-        SELECT timestamp, building_type, element, crack_type,
-               severity, score, confidence, length_value, width_value
+        SELECT
+            timestamp,
+            building_type,
+            element,
+            crack_type,
+            severity,
+            score,
+            confidence,
+            length_value,
+            width_value
         FROM inspections
         ORDER BY id DESC
         """
     ).fetchall()
+
     conn.close()
 
     if not rows:
-        st.info("No saved inspections yet.")
+
+        st.info(
+            "No saved inspections yet."
+        )
+
     else:
+
         for row in rows:
+
             (
                 timestamp,
                 btype,
@@ -1211,11 +2130,28 @@ elif page == "Inspection History":
             with st.expander(
                 f"{timestamp} • {element} • {severity}"
             ):
+
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Severity", severity)
-                c2.metric("Score", score)
-                c3.metric("Confidence", f"{confidence:.0f}%")
-                c4.metric("Crack type", crack_type)
+
+                c1.metric(
+                    "Severity",
+                    severity,
+                )
+
+                c2.metric(
+                    "Score",
+                    score,
+                )
+
+                c3.metric(
+                    "Confidence",
+                    f"{confidence:.0f}%",
+                )
+
+                c4.metric(
+                    "Crack type",
+                    crack_type,
+                )
 
                 st.write(
                     f"**Building:** {btype}  |  "
@@ -1231,8 +2167,10 @@ elif page == "Inspection History":
 st.markdown(
     """
     <div class="footer">
-        Structure Doctor AI • Hackathon Prototype<br>
-        Preliminary image-based screening only • Not a structural safety certificate
+        Structure Doctor AI • Hackathon Prototype
+        <br>
+        Preliminary image-based screening only •
+        Not a structural safety certificate
     </div>
     """,
     unsafe_allow_html=True,
